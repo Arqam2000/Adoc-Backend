@@ -48,7 +48,8 @@ const getAllInstitutes = async (req, res) => {
     } catch (error) {
         return res.status(400).json({
                 success: false,
-                message: "Cannot fetch institutes"
+                message: "Cannot fetch institutes",
+                error
             })
     }
 }
