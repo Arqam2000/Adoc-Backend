@@ -47,7 +47,19 @@ app.use("/api/v1/degrees", degreeRouter)
 
 import designationRouter from "./src/routes/designation.routes.js"
 
-app.use("/api/v1/designation", designationRouter)
+app.use("/api/v1/designations", designationRouter)
+
+// disease routes
+
+import diseaseRouter from "./src/routes/disease.routes.js"
+
+app.use("/api/v1/diseases", diseaseRouter)
+
+// symptom routes
+
+import symptomRouter from "./src/routes/symptom.routes.js"
+
+app.use("/api/v1/symptoms", symptomRouter)
 
 
 

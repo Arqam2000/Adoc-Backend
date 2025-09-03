@@ -69,7 +69,24 @@ const login = async (req, res) => {
     })
 }
 
+const getDoctorProfile = async (req, res) => {
+    try {
+        const [rows] = await pool.query("SELECT * FROM doctors")
+    
+        return res.status(200).json({
+            success: true,
+            data: rows
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error
+        })
+    }
+}
+
 export {
     register,
-    login
+    login,
+    getDoctorProfile
 }

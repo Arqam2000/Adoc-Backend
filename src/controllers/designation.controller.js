@@ -8,15 +8,15 @@ const addDesignation = async (req, res) => {
             return res.status(400).send("Designation is required")
         }
 
-        const [result] = await pool.query(`INSERT INTO designation (designation_name) VALUES (?)`, [designation])
+        const [result] = await pool.query(`INSERT INTO designation (DDesig) VALUES (?)`, [designation])
 
         console.log(result.insertId)
 
         res.status(201).json({
             success: true,
             designation: {
-                designation_code: result.insertId,
-                designation_name: designation
+                Desig: result.insertId,
+                DDesig: designation
             }
         })
 
@@ -55,7 +55,7 @@ const editDesignation = async (req, res) => {
             })
         }
 
-        const [result] = await pool.query("UPDATE designation SET designation_name = ? WHERE designation_code = ?", [designation, designation_code])
+        const [result] = await pool.query("UPDATE designation SET DDesig = ? WHERE Desig = ?", [designation, designation_code])
 
         if (result.affectedRows == 0) {
             return res.status(400).json({
@@ -65,7 +65,7 @@ const editDesignation = async (req, res) => {
         }
 
         const [rows] = await pool.query(
-            "SELECT * FROM designation WHERE designation_code = ?",
+            "SELECT * FROM designation WHERE Desig = ?",
             [designation_code]
         );
 
@@ -88,7 +88,7 @@ const deleteDesignation = async (req, res) => {
     try {
         const { designation_code } = req.params
 
-        const result = await pool.query("DELETE FROM designation WHERE designation_code = (?)", [designation_code])
+        const result = await pool.query("DELETE FROM designation WHERE Desig = (?)", [designation_code])
 
         console.log("result", result)
 

@@ -18,8 +18,8 @@ const addSpecialization = async (req, res) => {
         res.status(201).json({
             success: true,
             specialization: {
-                specialization_code: result.insertId,
-                specialization_name: specialization
+                Specialization_code: result.insertId,
+                Specialization_name: specialization
             }
         })
 

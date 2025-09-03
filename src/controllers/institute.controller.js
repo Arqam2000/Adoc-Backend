@@ -66,7 +66,7 @@ const editInstitute = async (req, res) => {
             })
         }
 
-        const [result] = await pool.query("UPDATE institute SET institute_name = ? WHERE institute_code = ?", [institute, institute_code])
+        const [result] = await pool.query("UPDATE institute SET university_name = ? WHERE university = ?", [institute, institute_code])
 
         if (result.affectedRows == 0) {
             return res.status(400).json({
@@ -76,7 +76,7 @@ const editInstitute = async (req, res) => {
         }
 
         const [rows] = await pool.query(
-            "SELECT * FROM institute WHERE institute_code = ?",
+            "SELECT * FROM institute WHERE university = ?",
             [institute_code]
         );
 
