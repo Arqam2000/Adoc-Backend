@@ -7,7 +7,7 @@ const router = Router()
 
 router.route("/add-symptom").post(upload.single('image'), addSymptom)
 router.route("/get-symptoms").get(getAllSymptoms)
-router.route("/edit-symptom/:symptom_code").patch(editSymptom)
+router.route("/edit-symptom/:symptom_code").patch(upload.single('image'), editSymptom)
 router.route("/delete-symptom/:symptom_code").delete(deleteSymptom)
 
 export default router

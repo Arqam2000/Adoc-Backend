@@ -9,14 +9,14 @@ const addDisease = async (req, res) => {
         console.log("disease", disease)
         console.log("req.file", req.file)
 
-        const imageBuffer = fs.readFileSync(imagePath);
-
         if (!disease || !imagePath) {
             return res.status(400).json({
                 success: false,
                 message: "Disease is required"
             })
         }
+
+        const imageBuffer = fs.readFileSync(imagePath);
 
         const [result] = await pool.query(`INSERT INTO diseases (diseases, dpict) VALUES (?, ?)`, [disease, imageBuffer])
 
@@ -76,15 +76,18 @@ const editDisease = async (req, res) => {
     try {
         const { disease } = req.body
         const { disease_code } = req.params
+        const imagePath = req.file.path;
 
-        if (!disease) {
+        if (!disease || !imagePath) {
             return res.status(400).json({
                 success: false,
-                message: "Please provide disease name"
+                message: "Please provide disease name or disease image"
             })
         }
 
-        const [result] = await pool.query("UPDATE diseases SET diseases = ? WHERE disease = ?", [disease, disease_code])
+        const imageBuffer = fs.readFileSync(imagePath);
+
+        const [result] = await pool.query("UPDATE diseases SET diseases = ?, dpict = ? WHERE disease = ?", [disease, imageBuffer, disease_code])
 
         if (result.affectedRows == 0) {
             return res.status(400).json({
@@ -93,15 +96,26 @@ const editDisease = async (req, res) => {
             })
         }
 
+        fs.unlinkSync(imagePath);
+
         const [rows] = await pool.query(
             "SELECT * FROM diseases WHERE disease = ?",
             [disease_code]
         );
 
+        
+        const newData = rows[0]
+        
+        const base64Image = newData.dpict?.toString("base64");
+
         return res.status(200).json({
             success: true,
             message: "Disease updated successfuly",
-            data: rows[0]
+            data: {
+                ...newData,
+                dpict: `data:image/png;base64,${base64Image}`
+            }
+            
         })
 
     } catch (error) {

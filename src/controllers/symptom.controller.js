@@ -78,15 +78,17 @@ const editSymptom = async (req, res) => {
     try {
         const { symptom } = req.body
         const { symptom_code } = req.params
+        const imagePath = req.file.path;
 
-        if (!symptom) {
+        if (!symptom || !imagePath) {
             return res.status(400).json({
                 success: false,
                 message: "Please provide symptom name"
             })
         }
+        const imageBuffer = fs.readFileSync(imagePath);
 
-        const [result] = await pool.query("UPDATE symptom SET symptoms = ? WHERE symptom = ?", [symptom, symptom_code])
+        const [result] = await pool.query("UPDATE symptom SET symptoms = ?, spict = ? WHERE symptom = ?", [symptom, imageBuffer, symptom_code])
 
         if (result.affectedRows == 0) {
             return res.status(400).json({
@@ -95,15 +97,24 @@ const editSymptom = async (req, res) => {
             })
         }
 
+        fs.unlinkSync(imagePath);
+
         const [rows] = await pool.query(
             "SELECT * FROM symptom WHERE symptom = ?",
             [symptom_code]
         );
 
+        const newData = rows[0]
+        
+        const base64Image = newData.spict?.toString("base64");
+
         return res.status(200).json({
             success: true,
             message: "Symptom updated successfuly",
-            data: rows[0]
+            data: {
+                ...newData,
+                spict: `data:image/png;base64,${base64Image}`
+            }
         })
 
     } catch (error) {
