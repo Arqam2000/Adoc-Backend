@@ -1,9 +1,11 @@
 import express from "express";
 import { pool } from "./dbConfig.js";
+import cookieParser from "cookie-parser";
 
 const app = express()
 
 app.use(express.json())
+app.use(cookieParser())
 
 
 // Country Routes
