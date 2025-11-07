@@ -2,7 +2,7 @@ import { pool } from "../../dbConfig.js";
 
 const addHospital = async (req, res) => {
     try {
-        const { hospital } = req.body
+        const { hospital, cityCode } = req.body
 
         if (!hospital) {
             return res.status(400).json({
@@ -11,7 +11,7 @@ const addHospital = async (req, res) => {
             })
         }
 
-        const [result] = await pool.query(`INSERT INTO hospital (hospital_name) VALUES (?)`, [hospital])
+        const [result] = await pool.query(`INSERT INTO hospital (hospital_name, city_code) VALUES (?, ?)`, [hospital, cityCode])
 
         console.log(result.insertId)
 

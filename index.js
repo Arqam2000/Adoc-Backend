@@ -63,8 +63,14 @@ import symptomRouter from "./src/routes/symptom.routes.js"
 
 app.use("/api/v1/symptoms", symptomRouter)
 
+// appointment routes
+
+import appointmentRouter from "./src/routes/appointment.routes.js"
+
+app.use("/api/v1/appointments", appointmentRouter)
 
 
-app.listen(3000, () => {
-    console.log("Server is running at port 3000...")
+
+app.listen(4000, () => {
+    console.log("Server is running at port 4000...")
 })

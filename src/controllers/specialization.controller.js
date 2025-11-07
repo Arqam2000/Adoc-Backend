@@ -1,19 +1,29 @@
 import { pool } from "../../dbConfig.js";
+import fs from "fs";
 
 const addSpecialization = async (req, res) => {
     try {
         const { specialization } = req.body
 
-        if (!specialization) {
+        const imagePath = req.file.path;
+
+        console.log(imagePath)
+        // console.log(req.body)
+
+        if (!specialization || !imagePath) {
             return res.status(400).json({
                 success: false,
                 message: "Specialization is required"
             })
         }
 
-        const [result] = await pool.query(`INSERT INTO specialization (specialization_name) VALUES (?)`, [specialization])
+        const imageBuffer = fs.readFileSync(imagePath);
+
+        const [result] = await pool.query(`INSERT INTO specialization (specialization_name, picture) VALUES (?, ?)`, [specialization, imageBuffer])
 
         console.log(result.insertId)
+
+        fs.unlinkSync(imagePath);
 
         res.status(201).json({
             success: true,
@@ -38,10 +48,19 @@ const getAllSpecializations = async (req, res) => {
 
         const data = result[0]
 
+        const newData = data.map(obj => {
+            const base64Image = obj.picture?.toString("base64");
+            console.log("base64Image", base64Image)
+            return {
+                ...obj,
+                picture: `data:image/png;base64,${base64Image}`
+            }
+        })
+
         res.status(200).json(
             {
                 success: true,
-                specializations: data
+                specializations: newData
             }
         )
 
@@ -58,15 +77,18 @@ const editSpecialization = async (req, res) => {
     try {
         const { specialization } = req.body
         const { specialization_code } = req.params
+        const imagePath = req.file.path;
 
-        if (!specialization) {
+        if (!specialization || !imagePath) {
             return res.status(400).json({
                 success: false,
                 message: "Please provide specialization name"
             })
         }
 
-        const [result] = await pool.query("UPDATE specialization SET specialization_name = ? WHERE specialization_code = ?", [specialization, specialization_code])
+        const imageBuffer = fs.readFileSync(imagePath);
+
+        const [result] = await pool.query("UPDATE specialization SET specialization_name = ?, picture = ? WHERE specialization_code = ?", [specialization, imageBuffer, specialization_code])
 
         if (result.affectedRows == 0) {
             return res.status(400).json({
@@ -74,6 +96,8 @@ const editSpecialization = async (req, res) => {
                 message: "Cannot update the specialization"
             })
         }
+
+        fs.unlinkSync(imagePath);
 
         const [rows] = await pool.query(
             "SELECT * FROM specialization WHERE specialization_code = ?",
