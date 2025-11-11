@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { deleteDoctorExp, deleteDoctorExpFromId, deleteDoctorHD, deleteDoctorHDFromId, deleteDoctorProfile, deleteDoctorQual, deleteDoctorVD, editDoctorExp, editDoctorHD, editDoctorProfile, editDoctorQual, editDoctorVD, getAllDoctors, getDoctorProfile, login, logout, register } from "../controllers/doctor.controller.js";
+import { deleteDoctorExp, deleteDoctorExpFromId, deleteDoctorHD, deleteDoctorHDFromId, deleteDoctorProfile, deleteDoctorQual, deleteDoctorVD, editDoctorExp, editDoctorHD, editDoctorProfile, editDoctorQual, editDoctorVD, getAllDoctors, getDoctorProfile, login, logout, register, saveAppointmentTypes } from "../controllers/doctor.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router()
@@ -21,5 +21,6 @@ router.route("/delete-doctorhd/:id").post(verifyJWT, deleteDoctorHDFromId)
 router.route("/edit-doctorexp").post(verifyJWT, editDoctorExp)
 router.route("/delete-doctorexp").post(verifyJWT, deleteDoctorExp)
 router.route("/delete-doctorexp/:id").post(verifyJWT, deleteDoctorExpFromId)
+router.route("/appointment-type").post(verifyJWT, saveAppointmentTypes)
 
 export default router
