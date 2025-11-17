@@ -33,6 +33,11 @@ import doctorRouter from "./src/routes/doctor.routes.js"
 
 app.use("/api/v1/doctors", doctorRouter)
 
+// Patient Routes
+import patientRouter from "./src/routes/patient.routes.js"
+
+app.use("/api/v1/patients", patientRouter)
+
 // Institute routes
 
 import instituteRouter from "./src/routes/institute.routes.js"
