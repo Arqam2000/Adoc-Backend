@@ -50,7 +50,7 @@ const getAllSpecializations = async (req, res) => {
 
         const newData = data.map(obj => {
             const base64Image = obj.picture?.toString("base64");
-            console.log("base64Image", base64Image)
+            // console.log("base64Image", base64Image)
             return {
                 ...obj,
                 picture: `data:image/png;base64,${base64Image}`

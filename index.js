@@ -6,6 +6,7 @@ const app = express()
 
 app.use(express.json())
 app.use(cookieParser())
+app.use("/uploads", express.static("uploads"));
 
 
 // Country Routes
@@ -74,7 +75,17 @@ import appointmentRouter from "./src/routes/appointment.routes.js"
 
 app.use("/api/v1/appointments", appointmentRouter)
 
+// lab test routes
 
+import labTestRouter from "./src/routes/labTest.routes.js"
+
+app.use("/api/v1/labTests", labTestRouter)
+
+// review routes
+
+import reviewRouter from "./src/routes/review.routes.js"
+
+app.use("/api/v1/reviews", reviewRouter)
 
 app.listen(4000, () => {
     console.log("Server is running at port 4000...")

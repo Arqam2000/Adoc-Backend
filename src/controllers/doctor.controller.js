@@ -39,9 +39,11 @@ import jwt from "jsonwebtoken";
 // }
 const register = async (req, res) => {
   try {
-    const { name, email, phone, password } = req.body
+    const { name, email, mobile, password, country, state, city } = req.body
+
     console.log("body", req.body)
-    if (!name || !email || !phone || !password) {
+
+    if (!name || !email || !mobile || !country.name || !state.name || !city.name || !password ) {
       return res.status(400).json({
         success: false,
         message: "Please provide complete credentials"
@@ -57,7 +59,7 @@ const register = async (req, res) => {
       })
     }
 
-    await pool.query("INSERT INTO mdoctor (name, email, phone, password) VALUES (?, ?, ?, ?)", [name, email, phone, password])
+    await pool.query("INSERT INTO mdoctor (name, email, phone, city, state, country, password) VALUES (?, ?, ?, ?, ?, ?, ?)", [name, email, mobile, city.name, state.name, country.name, password])
 
     return res.status(201).json({
       success: true,
@@ -106,16 +108,16 @@ const register = async (req, res) => {
 //     })
 // }
 const login = async (req, res) => {
-  const { email, password } = req.body
+  const { phone, password } = req.body
 
-  if (!email || !password) {
+  if (!phone || !password) {
     return res.status(400).json({
       success: false,
       message: "Please provide complete credentials"
     })
   }
 
-  const [rows] = await pool.query("SELECT * FROM mdoctor WHERE email = ?", [email])
+  const [rows] = await pool.query("SELECT * FROM mdoctor WHERE phone = ?", [phone])
 
   if (rows.length == 0) {
     return res.status(400).json({
@@ -648,6 +650,40 @@ const deleteDoctorExpFromId = async (req, res) => {
   }
 }
 
+const editDoctorWaitingTime = async (req, res) => {
+  try {
+    const {waitingTime, dr} = req.body
+
+    if (!waitingTime) {
+      return res.status(400).json({
+        success: false,
+        message: "Waiting time is required"
+      })
+    }
+
+    const [result] = await pool.query("UPDATE mdoctor SET waiting_time = ? WHERE dr = ?", [waitingTime, dr])
+
+    if (result.affectedRows === 0) {
+      return res.status(500).json({
+        success: false,
+        message: "Something went wrong while saving waiting time"
+      })
+    }
+
+    return res.status(200).json({
+        success: true,
+        message: "Waiting time saved successfuly"
+      })
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Cannot save waiting time",
+      error
+    })
+  }
+}
+
 const saveAppointmentTypes = async (req, res) => {
   try {
     const { dr, appointmentType, availableForFreeVideoConsultation } = req.body
@@ -686,5 +722,6 @@ export {
   editDoctorExp,
   deleteDoctorExp,
   deleteDoctorExpFromId,
+  editDoctorWaitingTime,
   saveAppointmentTypes
 }

@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { addSpecialization, deleteSpecialization, editSpecialization, getAllSpecializations } from "../controllers/specialization.controller.js";
-import multer from 'multer'
-const upload = multer({ dest: 'uploads/' })
+import upload from "../utils/multer.js";
 
 const router = Router()
 

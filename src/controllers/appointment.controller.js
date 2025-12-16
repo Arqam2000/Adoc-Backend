@@ -1,17 +1,90 @@
 import { pool } from "../../dbConfig.js";
 
+// const bookAppointment = async (req, res) => {
+//   try {
+//     const { dr, patientName, day, time, phone, fees, hospital_name = "no", vc = "no" } = req.body
+
+//     console.log("req.body", req.body);
+
+//     console.log("data", { dr, patientName, day, time, phone, fees, hospital_name, vc });
+
+//     const datetime = `${day} ${time}:00`;
+
+//     console.log("datetime", datetime);
+
+//     const [patients] = await pool.query("SELECT * FROM patient WHERE pmobile = ? AND pname = ?", [phone, patientName]);
+
+//     if (patients.length === 0) {
+//       // If patient does not exist, create a new patient record
+//       const [result] = await pool.query(
+//         `INSERT INTO patient (pname, pmobile) VALUES (?, ?)`,
+//         [patientName, phone]
+//       );
+//       const patientId = result.insertId;
+//       console.log("New patient created with ID:", patientId);
+
+//       await pool.query(
+//         `INSERT INTO bappoint (dr, patient, bdate, fees, vc, hospital_name) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE
+//         bdate = VALUES(bdate),
+//         fees = VALUES(fees)`,
+//         [dr, patientId, datetime, fees, vc, hospital_name]
+//       );
+
+//       return res.status(201).json({
+//         success: true,
+//         message: "Appointment booked successfuly",
+//         // id: result.insertId
+//       })
+//     }
+
+//     const [result] = await pool.query(
+//       `INSERT INTO bappoint (dr, patient, bdate, fees, vc, hospital_name) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE
+//         bdate = VALUES(bdate),
+//         fees = VALUES(fees)`,
+//       [dr, patients[0].patient, datetime, fees, vc, hospital_name]
+//     );
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "Appointment booked successfuly",
+//       // id: result.insertId
+//     })
+
+//   } catch (error) {
+//     return res.status(500).json({
+//       success: false,
+//       message: "Cannot book appointment",
+//       error
+//     })
+//   }
+// }
+
 const bookAppointment = async (req, res) => {
   try {
-    const { dr, patientName, day, time, phone, fees, hospital_name = "no", vc = "no" } = req.body
+    const { dr, patientName, day, time, phone, fees, hospital_name = "no", vc = "no", actionType } = req.body
 
     console.log("req.body", req.body);
 
-    console.log("data", { dr, patientName, day, time, phone, fees, hospital_name, vc });
+    // console.log("data", { dr, patientName, day, time, phone, fees, hospital_name, vc });
 
     const datetime = `${day} ${time}:00`;
 
     console.log("datetime", datetime);
 
+    if(actionType === "modify"){
+      const [result] = await pool.query("UPDATE bappoint SET bdate = ? WHERE dr = ? AND patient = (SELECT patient FROM patient WHERE pname = ? AND pmobile = ?) AND DATE(bdate) = ?", [datetime, dr, patientName, phone, day]);
+
+      if(result.affectedRows === 0){
+        return res.status(400).json({
+          success: false,
+          message: "No appointment found to modify"
+        })
+      }
+      return res.status(200).json({
+        success: true,
+        message: "Appointment modified successfully"
+      })
+    }
     const [patients] = await pool.query("SELECT * FROM patient WHERE pmobile = ? AND pname = ?", [phone, patientName]);
 
     if (patients.length === 0) {
@@ -37,10 +110,14 @@ const bookAppointment = async (req, res) => {
       })
     }
 
+    // const [result] = await pool.query(
+    //   `INSERT INTO bappoint (dr, patient, bdate, fees, vc, hospital_name) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE
+    //     bdate = VALUES(bdate),
+    //     fees = VALUES(fees)`,
+    //   [dr, patients[0].patient, datetime, fees, vc, hospital_name]
+    // );
     const [result] = await pool.query(
-      `INSERT INTO bappoint (dr, patient, bdate, fees, vc, hospital_name) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE
-        bdate = VALUES(bdate),
-        fees = VALUES(fees)`,
+      `INSERT INTO bappoint (dr, patient, bdate, fees, vc, hospital_name) VALUES (?, ?, ?, ?, ?, ?)`,
       [dr, patients[0].patient, datetime, fees, vc, hospital_name]
     );
 
@@ -97,7 +174,7 @@ const getAppointments = async (req, res) => {
 
     // const [rows] = await pool.query("SELECT b.dr, b.bdate, b.done, b.fees, p.pname, p.pemail, p.pmobile FROM bappoint b JOIN patient p ON p.patient = b.patient WHERE dr = ?", [id]);
 
-    const [rows] = await pool.query("SELECT bappoint, b.dr, b.bdate, b.status, b.fees, b.vc, p.pname, p.pemail, p.pmobile, b.hospital_name FROM bappoint b JOIN patient p ON p.patient = b.patient WHERE dr = ?", [id]);
+    const [rows] = await pool.query("SELECT bappoint, b.dr, b.bdate, b.status, b.symptom, b.prescription, b.next_follow_up, b.lab_test_advice, b.fees, b.vc, p.pname, p.pemail, p.pmobile, b.hospital_name FROM bappoint b JOIN patient p ON p.patient = b.patient WHERE dr = ?", [id]);
     // const [rows] = await pool.query("SELECT bappoint, b.dr, b.bdate, b.status, b.fees, b.vc, p.pname, p.pemail, p.pmobile, b.hospital_name FROM bappoint b JOIN patient p ON p.patient = b.patient WHERE b.patient = ?", [id]);
 
     return res.status(200).json({
@@ -113,6 +190,7 @@ const getAppointments = async (req, res) => {
     });
   }
 }
+
 const getAppointmentsByPatient = async (req, res) => {
   try {
     const { id } = req.params;
@@ -125,31 +203,55 @@ const getAppointmentsByPatient = async (req, res) => {
     // const [rows] = await pool.query("SELECT b.dr, b.bdate, b.done, b.fees, p.pname, p.pemail, p.pmobile FROM bappoint b JOIN patient p ON p.patient = b.patient WHERE dr = ?", [id]);
 
 
-    const [rows] = await pool.query("SELECT bappoint, b.dr, d.name, appst.status as dr_status, b.bdate, b.status, b.fees, b.vc, p.pname, p.pemail, p.pmobile, b.hospital_name FROM bappoint b JOIN patient p ON p.patient = b.patient JOIN mdoctor d ON d.dr = b.dr LEFT JOIN appointments_statuses appst ON appst.dr = b.dr  WHERE b.patient = ? AND DATE(b.bdate) = ? AND b.vc = 'yes'", [id, date.split("T")[0]]);
+    const [rows] = await pool.query("SELECT bappoint, b.dr, d.name, d.phone, appst.status as dr_status, b.bdate, b.status, b.symptom, b.prescription, b.next_follow_up, b.lab_test_advice, b.fees, b.vc, p.pname, p.pemail, p.pmobile, b.hospital_name FROM bappoint b JOIN patient p ON p.patient = b.patient JOIN mdoctor d ON d.dr = b.dr LEFT JOIN appointments_statuses appst ON appst.dr = b.dr  WHERE b.patient = ? AND DATE(b.bdate) = ? AND b.vc = 'yes'", [id, date.split("T")[0]]);
 
     console.log("rows", rows)
 
     let count = []
+    let hosRows = [];
+    let newRows = [];
 
     if (rows.length > 0) {
-      const [countRes] = await pool.query("SELECT COUNT(*) AS patients_waiting FROM bappoint WHERE dr = ? AND DATE(bdate) = ? AND vc = 'yes' AND patient != ? AND status = 'pending'", [rows[0]?.dr, date.split("T")[0], id])
+      // const [countRes] = await pool.query("SELECT COUNT(*) AS patients_waiting FROM bappoint WHERE dr = ? AND DATE(bdate) = ? AND vc = 'yes' AND patient != ? AND status = 'pending'", [rows[0]?.dr, date.split("T")[0], id])
 
-      count.push(...countRes)
+      
+      for (const element of rows) {
+        const [countRes] = await pool.query("SELECT COUNT(*) AS patients_waiting FROM bappoint WHERE dr = ? AND DATE(bdate) = ? AND vc = 'yes' AND patient != ? AND status = 'pending'", [element.dr, date.split("T")[0], id])
+        count.push(...countRes)
+      }
+
+      newRows = rows.map((item, index) => {
+        item.patients_waiting = count[index]?.patients_waiting
+        return item
+      })
+      console.log("new Rows", newRows)
+
+    } else {
+      [hosRows] = await pool.query("SELECT bappoint, b.dr, d.name, appst.status as dr_status, b.bdate, b.status, b.symptom, b.prescription, b.next_follow_up, b.lab_test_advice, b.fees, b.vc, p.pname, p.pemail, p.pmobile, b.hospital_name FROM bappoint b JOIN patient p ON p.patient = b.patient JOIN mdoctor d ON d.dr = b.dr LEFT JOIN appointments_statuses appst ON appst.dr = b.dr  WHERE b.patient = ? AND DATE(b.bdate) = ? AND b.vc = 'no'", [id, date.split("T")[0]]);
+
+      console.log("hos rows", hosRows)
+
+      if (hosRows.length > 0) {
+        const [countRes] = await pool.query("SELECT COUNT(*) AS patients_waiting FROM bappoint WHERE dr = ? AND DATE(bdate) = ? AND vc = 'no' AND patient != ? AND status = 'pending'", [hosRows[0]?.dr, date.split("T")[0], id])
+
+        count.push(...countRes)
+      }
     }
-    
+
     console.log("count", count)
 
 
     // const [result] = await pool.query("SELECT bappoint, b.dr, d.name, b.bdate, b.status, b.fees, b.vc, p.pname, p.pemail, p.pmobile, b.hospital_name FROM bappoint b JOIN patient p ON p.patient = b.patient JOIN mdoctor d ON d.dr = b.dr WHERE b.dr = ? AND DATE(b.bdate) = ? AND b.vc = 'yes' AND b.patient != ?", [rows[0].dr, date.split("T")[0], id]);
 
-    const [appt] = await pool.query("SELECT bappoint, b.dr, d.name, b.bdate, b.status, b.fees, b.vc, p.pname, p.pemail, p.pmobile, b.hospital_name FROM bappoint b JOIN patient p ON p.patient = b.patient JOIN mdoctor d ON d.dr = b.dr WHERE b.patient = ? AND DATE(b.bdate) != ?", [id, date.split("T")[0]]);
+    const [appt] = await pool.query("SELECT bappoint, b.dr, d.name, b.bdate, b.status, b.symptom, b.prescription, b.next_follow_up, b.lab_test_advice, b.fees, b.vc, p.pname, p.pemail, p.pmobile, b.hospital_name FROM bappoint b JOIN patient p ON p.patient = b.patient JOIN mdoctor d ON d.dr = b.dr WHERE b.patient = ? AND DATE(b.bdate) != ? ORDER BY bdate", [id, date.split("T")[0]]);
 
     console.log("Appt", appt)
 
     return res.status(200).json({
       success: true,
       // allAppointments: appt,
-      appointments: [...rows, ...appt],
+      // appointments: [...rows, ...hosRows, ...appt],
+      appointments: [...newRows, ...hosRows, ...appt],
       // appointmentsByDoctor: result,
       patients_waiting: count[0]?.patients_waiting
     });
@@ -166,14 +268,27 @@ const getAppointmentsByPatient = async (req, res) => {
 const findAppointmentByDate = async (req, res) => {
   try {
     const { query } = req.query;
-    console.log("query", query);
+    const { dr } = req.body;
 
-    const [result] = await pool.query("SELECT * FROM `bappoint` WHERE bdate=?", [query]);
+    console.log("query", query);
+    console.log("query split", query.split(":")[0]);
+
+    const [result] = await pool.query("SELECT * FROM `bappoint` WHERE bdate=? AND dr = ?", [query, dr]);
+
+
+    const [resp] = await pool.query("SELECT * FROM `bappoint` WHERE DATE(bdate) = ? AND dr = ? ORDER BY bdate", [query.split(":")[0], dr]);
+
+    if (resp.length > 0) {
+      return res.status(202).json({
+        success: true,
+        appointments: resp,
+        message: "Appointments found"
+      });
+    }
 
     if (result.length > 0) {
       return res.status(200).json({
         success: true,
-        appointments: result,
         message: "Appointments found"
       });
     }
@@ -276,6 +391,60 @@ const saveAppointmentStatus = async (req, res) => {
     });
   }
 }
+
+const editAppointment = async (req, res) => {
+  try {
+    const { bappoint, symptom, prescription, nextFollowUp, labTestAdvice } = req.body
+
+    const [result] = await pool.query("UPDATE bappoint SET symptom = ?, prescription = ?, next_follow_up = ?, lab_test_advice = ? where bappoint = ?", [symptom, prescription, nextFollowUp, labTestAdvice, bappoint])
+
+    console.log("result", result)
+
+    if (result.affectedRows === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Something went wrong while editing the appointment"
+      })
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Successfuly edit the appointment"
+    })
+
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Cannot edit the appointment",
+      error
+    })
+  }
+}
+const getAppointment = async (req, res) => {
+  try {
+    const { bappoint } = req.body
+
+    const [result] = await pool.query("SELECT symptom, prescription, next_follow_up, lab_test_advice FROM bappoint where bappoint = ?", [bappoint])
+
+    console.log("result", result)
+
+    return res.status(200).json({
+      success: true,
+      message: "Successfuly edit the appointment",
+      data: result[0]
+    })
+
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Cannot edit the appointment",
+      error
+    })
+  }
+}
+
 export {
   bookAppointment,
   findPatientByPhone,
@@ -283,5 +452,7 @@ export {
   findAppointmentByDate,
   closeAppointment,
   saveAppointmentStatus,
-  getAppointmentsByPatient
+  getAppointmentsByPatient,
+  editAppointment,
+  getAppointment
 }
