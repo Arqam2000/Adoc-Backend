@@ -6,7 +6,7 @@ const app = express()
 
 app.use(express.json())
 app.use(cookieParser())
-app.use("https://kaysoftwares.com/uploads", express.static("uploads"));
+// app.use("https://kaysoftwares.com/uploads", express.static("uploads"));
 
 app.get("/", (req, res) => {
     return res.status(200).json({
