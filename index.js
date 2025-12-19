@@ -87,6 +87,12 @@ import reviewRouter from "./src/routes/review.routes.js"
 
 app.use("/api/v1/reviews", reviewRouter)
 
+// admin routes
+
+import adminRouter from "./src/routes/admin.routes.js"
+
+app.use("/api/v1/admin", adminRouter)
+
 app.listen(4000, () => {
     console.log("Server is running at port 4000...")
 })
