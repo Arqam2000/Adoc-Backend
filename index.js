@@ -8,6 +8,14 @@ app.use(express.json())
 app.use(cookieParser())
 app.use("/uploads", express.static("uploads"));
 
+// test route
+
+app.get("/", (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: "Server is running successfuly..."
+  })
+})
 
 // Country Routes
 import countryRouter from "./src/routes/country.routes.js"

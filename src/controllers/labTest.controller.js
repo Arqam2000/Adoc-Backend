@@ -6,7 +6,7 @@ const addLabTest = async (req, res) => {
 
     console.log("req.body", req.body)
     console.log("req.file", req.file)
-    console.log("req.file.path", req.file.path)
+    console.log("req.file.path", req.file?.path)
 
     if (!patientId || !date || !doctor || !labTestFor) {
       return res.status(400).json({
@@ -15,7 +15,7 @@ const addLabTest = async (req, res) => {
       });
     }
 
-    const [result] = await pool.query("INSERT INTO lab_test (patient, date, doctor, lab_test_for, lab_report) VALUES (?, ?, ?, ?, ?)", [patientId, date, doctor, labTestFor, req.file.path]);
+    const [result] = await pool.query("INSERT INTO lab_test (patient, date, doctor, lab_test_for, lab_report) VALUES (?, ?, ?, ?, ?)", [patientId, date, doctor, labTestFor, req.file?.path]);
 
     return res.status(201).json({
       success: true,
