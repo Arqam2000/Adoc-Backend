@@ -15,6 +15,14 @@ app.get("/", (req, res) => {
     })
 })
 
+// test route
+
+app.get("/", (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: "Server is running successfuly..."
+  })
+})
 
 // Country Routes
 import countryRouter from "./src/routes/country.routes.js"
