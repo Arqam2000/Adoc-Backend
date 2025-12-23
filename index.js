@@ -6,7 +6,14 @@ const app = express()
 
 app.use(express.json())
 app.use(cookieParser())
-app.use("/uploads", express.static("uploads"));
+// app.use("https://kaysoftwares.com/uploads", express.static("uploads"));
+
+app.get("/", (req, res) => {
+    return res.status(200).json({
+        success: true,
+        message: "Server is running..."
+    })
+})
 
 // test route
 
@@ -28,9 +35,9 @@ import hospitalRouter from "./src/routes/hospital.routes.js"
 app.use("/api/v1/hospitals", hospitalRouter)
 
 // Specialization Routes
-import specializationRouter from "./src/routes/specialization.routes.js"
+// import specializationRouter from "./src/routes/specialization.routes.js"
 
-app.use("/api/v1/specializations", specializationRouter)
+// app.use("/api/v1/specializations", specializationRouter)
 
 // City Routes
 import cityRouter from "./src/routes/city.routes.js"
@@ -85,9 +92,9 @@ app.use("/api/v1/appointments", appointmentRouter)
 
 // lab test routes
 
-import labTestRouter from "./src/routes/labTest.routes.js"
+// import labTestRouter from "./src/routes/labTest.routes.js"
 
-app.use("/api/v1/labTests", labTestRouter)
+// app.use("/api/v1/labTests", labTestRouter)
 
 // review routes
 
