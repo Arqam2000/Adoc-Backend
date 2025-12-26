@@ -138,7 +138,7 @@ const login = async (req, res) => {
     // dr: rows[0].dr
     rows[0].dr,
     // }, 
-    "My Private",
+    process.env.JWT_SECRET,
     // {
     //     expiresIn: "1d"
     // }
@@ -161,7 +161,10 @@ const login = async (req, res) => {
 
   const options = {
     httpOnly: true,
-    secure: true,
+    path: "/",
+    maxAge: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    // secure: true,
+    // sameSite: "None"
   }
 
   return res.cookie("token", token, options).status(200).json({

@@ -1,14 +1,16 @@
 import { pool } from "../../dbConfig.js";
 import fs from "fs";
+import { uploadToCloud } from "../utils/cloudinary.js";
 
 const addSymptom = async (req, res) => {
     try {
         const { symptom } = req.body
-        const imagePath = req.file.path;
+        const imagePath = req.file.buffer;
+        const mimetype = req.file.mimetype;
         console.log("symptom", symptom)
         console.log("req.file", req.file)
 
-        const imageBuffer = fs.readFileSync(imagePath);
+        // const imageBuffer = fs.readFileSync(imagePath);
 
         if (!symptom || !imagePath) {
             return res.status(400).json({
@@ -17,12 +19,22 @@ const addSymptom = async (req, res) => {
             })
         }
         console.log("path", imagePath)
-        const [result] = await pool.query(`INSERT INTO symptom (symptoms, spict) VALUES (?, ?)`, [symptom, imageBuffer])
+
+        const url = await uploadToCloud(imagePath, mimetype)
+
+        if (!url) {
+          return res.status(500).json({
+                success: false,
+                message: "Symptom image upload failed"
+            })
+        }
+
+        const [result] = await pool.query(`INSERT INTO symptom (symptoms, spict) VALUES (?, ?)`, [symptom, url])
 
         console.log(result.insertId)
         console.log("result",result)
 
-        fs.unlinkSync(imagePath);
+        // fs.unlinkSync(imagePath);
 
         res.status(201).json({
             success: true,
@@ -78,7 +90,8 @@ const editSymptom = async (req, res) => {
     try {
         const { symptom } = req.body
         const { symptom_code } = req.params
-        const imagePath = req.file.path;
+        const imagePath = req.file.buffer;
+        const mimetype = req.file.mimetype;
 
         if (!symptom || !imagePath) {
             return res.status(400).json({
@@ -86,9 +99,17 @@ const editSymptom = async (req, res) => {
                 message: "Please provide symptom name"
             })
         }
-        const imageBuffer = fs.readFileSync(imagePath);
+        // const imageBuffer = fs.readFileSync(imagePath);
+        const url = await uploadToCloud(imagePath, mimetype)
 
-        const [result] = await pool.query("UPDATE symptom SET symptoms = ?, spict = ? WHERE symptom = ?", [symptom, imageBuffer, symptom_code])
+        if (!url) {
+          return res.status(500).json({
+                success: false,
+                message: "Symptom image upload failed"
+            })
+        }
+
+        const [result] = await pool.query("UPDATE symptom SET symptoms = ?, spict = ? WHERE symptom = ?", [symptom, url, symptom_code])
 
         if (result.affectedRows == 0) {
             return res.status(400).json({
@@ -97,7 +118,7 @@ const editSymptom = async (req, res) => {
             })
         }
 
-        fs.unlinkSync(imagePath);
+        // fs.unlinkSync(imagePath);
 
         const [rows] = await pool.query(
             "SELECT * FROM symptom WHERE symptom = ?",
@@ -106,14 +127,15 @@ const editSymptom = async (req, res) => {
 
         const newData = rows[0]
         
-        const base64Image = newData.spict?.toString("base64");
+        // const base64Image = newData.spict?.toString("base64");
 
         return res.status(200).json({
             success: true,
             message: "Symptom updated successfuly",
             data: {
                 ...newData,
-                spict: `data:image/png;base64,${base64Image}`
+                // spict: `data:image/png;base64,${base64Image}`
+                spict: url
             }
         })
 

@@ -1,4 +1,5 @@
 import { pool } from "../../dbConfig.js";
+import { uploadPDFToCloud } from "../utils/cloudinary.js";
 
 const addLabTest = async (req, res) => {
   try {
@@ -8,6 +9,7 @@ const addLabTest = async (req, res) => {
     console.log("req.file", req.file)
     console.log("req.file.path", req.file?.path)
 
+    
     if (!patientId || !date || !doctor || !labTestFor) {
       return res.status(400).json({
         success: false,
@@ -15,7 +17,19 @@ const addLabTest = async (req, res) => {
       });
     }
 
-    const [result] = await pool.query("INSERT INTO lab_test (patient, date, doctor, lab_test_for, lab_report) VALUES (?, ?, ?, ?, ?)", [patientId, date, doctor, labTestFor, req.file?.path]);
+    const buffer = req.file.buffer
+
+    const pdfUrl = await uploadPDFToCloud(buffer);
+
+    if (!pdfUrl) {
+      return res.status(500).json({
+                success: false,
+                message: "Pdf file upload failed"
+            })
+    }
+
+
+    const [result] = await pool.query("INSERT INTO lab_test (patient, date, doctor, lab_test_for, lab_report) VALUES (?, ?, ?, ?, ?)", [patientId, date, doctor, labTestFor, pdfUrl]);
 
     return res.status(201).json({
       success: true,

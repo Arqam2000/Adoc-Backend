@@ -6,6 +6,7 @@ export const verifyJWT = async (req, res, next) => {
         const token = req.cookies?.token || req.header("Authorization")?.replace("Bearer ", "")
 
         console.log("token from middleware:", token);
+        console.log("req cookies", req.cookie)
         
         if (!token) {
             return res.status(401).json({

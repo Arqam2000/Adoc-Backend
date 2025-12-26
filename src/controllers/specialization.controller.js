@@ -1,11 +1,13 @@
 import { pool } from "../../dbConfig.js";
 import fs from "fs";
+import { uploadToCloud } from "../utils/cloudinary.js";
 
 const addSpecialization = async (req, res) => {
     try {
         const { specialization } = req.body
 
-        const imagePath = req.file.path;
+        const imagePath = req.file.buffer;
+        const mimetype = req.file.mimetype;
 
         console.log(imagePath)
         // console.log(req.body)
@@ -17,13 +19,21 @@ const addSpecialization = async (req, res) => {
             })
         }
 
-        const imageBuffer = fs.readFileSync(imagePath);
+        // const imageBuffer = fs.readFileSync(imagePath);
+        const url = await uploadToCloud(imagePath, mimetype)
 
-        const [result] = await pool.query(`INSERT INTO specialization (specialization_name, picture) VALUES (?, ?)`, [specialization, imageBuffer])
+        if (!url) {
+          return res.status(500).json({
+                success: false,
+                message: "Specialization image upload failed"
+            })
+        }
+
+        const [result] = await pool.query(`INSERT INTO specialization (specialization_name, picture) VALUES (?, ?)`, [specialization, url])
 
         console.log(result.insertId)
 
-        fs.unlinkSync(imagePath);
+        // fs.unlinkSync(imagePath);
 
         res.status(201).json({
             success: true,
@@ -77,7 +87,8 @@ const editSpecialization = async (req, res) => {
     try {
         const { specialization } = req.body
         const { specialization_code } = req.params
-        const imagePath = req.file.path;
+        const imagePath = req.file.buffer;
+        const mimetype = req.file.mimetype;
 
         if (!specialization || !imagePath) {
             return res.status(400).json({
@@ -86,9 +97,17 @@ const editSpecialization = async (req, res) => {
             })
         }
 
-        const imageBuffer = fs.readFileSync(imagePath);
+        // const imageBuffer = fs.readFileSync(imagePath);
+        const url = await uploadToCloud(imagePath, mimetype)
 
-        const [result] = await pool.query("UPDATE specialization SET specialization_name = ?, picture = ? WHERE specialization_code = ?", [specialization, imageBuffer, specialization_code])
+        if (!url) {
+          return res.status(500).json({
+                success: false,
+                message: "Specialization image upload failed"
+            })
+        }
+
+        const [result] = await pool.query("UPDATE specialization SET specialization_name = ?, picture = ? WHERE specialization_code = ?", [specialization, url, specialization_code])
 
         if (result.affectedRows == 0) {
             return res.status(400).json({
@@ -97,7 +116,7 @@ const editSpecialization = async (req, res) => {
             })
         }
 
-        fs.unlinkSync(imagePath);
+        // fs.unlinkSync(imagePath);
 
         const [rows] = await pool.query(
             "SELECT * FROM specialization WHERE specialization_code = ?",
