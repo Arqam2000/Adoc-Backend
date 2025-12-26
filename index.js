@@ -28,7 +28,7 @@ app.use("/uploads", express.static("uploads"));
 app.get("/", (req, res) => {
   return res.status(200).json({
     success: true,
-    message: "Server is running..."
+    message: "Server is running successfully..."
   })
 })
 
