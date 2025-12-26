@@ -163,8 +163,8 @@ const login = async (req, res) => {
     httpOnly: true,
     path: "/",
     maxAge: new Date(Date.now() + 24 * 60 * 60 * 1000),
-    // secure: true,
-    // sameSite: "None"
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "None"
   }
 
   return res.cookie("token", token, options).status(200).json({
