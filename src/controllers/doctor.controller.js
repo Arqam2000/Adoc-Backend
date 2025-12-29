@@ -302,7 +302,7 @@ const getAllDoctors = async (req, res) => {
 
       // const [result] = await pool.query("select rew, rate, (rate * .01) / rew as satisfaction from (select dr, count(review) as rew, sum(rating) as rate from doctorRD group by dr) t where dr = ?", [element])
 
-      const [result] = await pool.query("select rew, rate, coalesce(rate / nullif(rew, 0), 0) as avg_rating, coalesce(((rate / nullif(rew, 0)) / 5) * 100, 0) as satisfaction_percentage from (select dr, count(review) as rew, sum(rating) as rate from doctorRD group by dr) t where dr = ?", [element])
+      const [result] = await pool.query("select rew, rate, coalesce(rate / nullif(rew, 0), 0) as avg_rating, coalesce(((rate / nullif(rew, 0)) / 5) * 100, 0) as satisfaction_percentage from (select dr, count(review) as rew, sum(rating) as rate from doctorrd group by dr) t where dr = ?", [element])
 
       reviews.push({ dr: element, ...result[0] })
       // console.log("result:", result)
