@@ -54,7 +54,7 @@ const addSpecialization = async (req, res) => {
 
 const getAllSpecializations = async (req, res) => {
     try {
-        const result = await pool.query(`SELECT * FROM Specialization`)
+        const result = await pool.query(`SELECT * FROM specialization`)
 
         const data = result[0]
 
