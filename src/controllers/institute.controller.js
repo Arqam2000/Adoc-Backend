@@ -36,7 +36,7 @@ const addInstitute = async (req, res) => {
 
 const getAllInstitutes = async (req, res) => {
     try {
-        const result = await pool.query(`SELECT * FROM Institute`)
+        const result = await pool.query(`SELECT * FROM institute`)
 
         const data = result[0]
 
