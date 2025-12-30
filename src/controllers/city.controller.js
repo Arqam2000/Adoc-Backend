@@ -27,7 +27,7 @@ const addCity = async (req, res) => {
 
 const getAllCities = async (req, res) => {
     try {
-        const result = await pool.query(`SELECT * FROM City`)
+        const result = await pool.query(`SELECT * FROM city`)
 
         const data = result[0]
 
