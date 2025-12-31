@@ -2,9 +2,9 @@ import { pool } from "../../dbConfig.js";
 
 const registerPatient = async (req, res) => {
   try {
-    const { name, email, phone, password, gender, bloodGroup } = req.body;
+    const { name, username, email, phone, password, gender, bloodGroup } = req.body;
 
-    if (!name || !phone || !gender || !bloodGroup) {
+    if (!name || !username || !phone || !gender || !bloodGroup) {
       return res.status(400).json({
         success: false,
         message: "All fields are required"
@@ -20,7 +20,7 @@ const registerPatient = async (req, res) => {
       });
     }
 
-    const [result] = await pool.query("INSERT INTO patient (pname, pemail, pmobile, ppassword, gender, blood_group) VALUES (?, ?, ?, ?, ?, ?)", [name, email, phone, password, gender, bloodGroup]);
+    const [result] = await pool.query("INSERT INTO patient (pname, pusername, pemail, pmobile, ppassword, gender, blood_group) VALUES (?, ?, ?, ?, ?, ?, ?)", [name, username.toLowerCase(), email, phone, password, gender, bloodGroup]);
 
     return res.status(201).json({
       success: true,
@@ -39,21 +39,21 @@ const registerPatient = async (req, res) => {
 const loginPatient = async (req, res) => {
   // Login logic to be implemented
   try {
-    const { phone, password } = req.body;
+    const { username, password } = req.body;
   
-    if (!phone || !password) {
+    if (!username || !password) {
       return res.status(400).json({
         success: false,
-        message: "Phone and password are required"
+        message: "Username and password are required"
       });
     }
-  
-    const [rows] = await pool.query("SELECT * FROM patient WHERE pmobile = ? AND ppassword = ?", [phone.replace("+", ""), password]);
 
+    const [rows] = await pool.query("SELECT * FROM patient WHERE pusername = ? AND ppassword = ?", [username.toLowerCase(), password]);
+    
     if (rows.length === 0) {
       return res.status(401).json({
         success: false,
-        message: "Invalid phone or password"
+        message: "Invalid username or password"
       });
     }
   

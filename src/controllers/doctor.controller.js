@@ -39,11 +39,11 @@ import jwt from "jsonwebtoken";
 // }
 const register = async (req, res) => {
   try {
-    const { name, email, mobile, password, country, state, city } = req.body
+    const { name, username, email, mobile, password, country, state, city, gender, specialization } = req.body
 
     console.log("body", req.body)
 
-    if (!name || !email || !mobile || !country.name || !state.name || !city.name || !password ) {
+    if (!name || !username || !email || !mobile || !country.name || !state.name || !city.name || !password || !gender || !specialization) {
       return res.status(400).json({
         success: false,
         message: "Please provide complete credentials"
@@ -59,7 +59,11 @@ const register = async (req, res) => {
       })
     }
 
-    await pool.query("INSERT INTO mdoctor (name, email, phone, city, state, country, password) VALUES (?, ?, ?, ?, ?, ?, ?)", [name, email, mobile, city.name, state.name, country.name, password])
+    const [cityRows] = await pool.query("SELECT city_code FROM city WHERE city_name = ?", [city.name])
+
+    const [specializationRows] = await pool.query("SELECT Specialization_code FROM specialization WHERE Specialization_name = ?", [specialization])
+
+    await pool.query("INSERT INTO mdoctor (name, username, email, phone, city, city_code, state, country, password, gender, specialization_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [name, username.toLowerCase(), email, mobile, city.name, cityRows[0].city_code, state.name, country.name, password, gender, specializationRows[0].Specialization_code])
 
     return res.status(201).json({
       success: true,
@@ -108,18 +112,18 @@ const register = async (req, res) => {
 //     })
 // }
 const login = async (req, res) => {
-  const { phone, password } = req.body
+  const { username, password } = req.body
 
-  if (!phone || !password) {
+  if (!username || !password) {
     return res.status(400).json({
       success: false,
       message: "Please provide complete credentials"
     })
   }
 
-  console.log("phone", phone)
+  console.log("username", username)
 
-  const [rows] = await pool.query("SELECT * FROM mdoctor WHERE phone = ?", [phone.replace("+", "")])
+  const [rows] = await pool.query("SELECT * FROM mdoctor WHERE username = ?", [username.toLowerCase()])
   // const [rows] = await pool.query(`SELECT * FROM mdoctor WHERE phone IN (${phone})`)
 
   console.log("rows", rows)
