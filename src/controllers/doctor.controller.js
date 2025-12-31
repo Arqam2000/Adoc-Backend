@@ -117,7 +117,12 @@ const login = async (req, res) => {
     })
   }
 
-  const [rows] = await pool.query("SELECT * FROM mdoctor WHERE phone = ?", [phone])
+  console.log("phone", phone)
+
+  const [rows] = await pool.query("SELECT * FROM mdoctor WHERE phone = ?", [phone.replace("+", "")])
+  // const [rows] = await pool.query(`SELECT * FROM mdoctor WHERE phone IN (${phone})`)
+
+  console.log("rows", rows)
 
   if (rows.length == 0) {
     return res.status(400).json({
@@ -250,7 +255,7 @@ const getDoctorProfile = async (req, res) => {
     console.log("rows", rows)
 
     let imgBuffer = user.picture;
-    let base64Image = "data:image/png;base64," + imgBuffer.toString("base64");
+    let base64Image = "data:image/png;base64," + imgBuffer?.toString("base64");
 
     user.picture = base64Image
 
@@ -278,11 +283,13 @@ const getAllDoctors = async (req, res) => {
   try {
     const [rows] = await pool.query("SELECT d.dr, d.name, d.email, d.phone, d.picture, d.about, d.pmdc_verification, d.appointment_type, d.`is available for free video consultation`, c.city_name, country.country_name, s.Specialization_name, GROUP_CONCAT(DISTINCT CONCAT(e.FromDate, ' - ', e.TillDate) SEPARATOR '; ') AS experiences, GROUP_CONCAT(DISTINCT CONCAT(de.degree_name, ' (', i.university_name, ')') SEPARATOR '; ') AS qualifications FROM mdoctor d JOIN specialization s ON s.Specialization_code = d.specialization_code JOIN city c ON c.city_code = d.city_code LEFT JOIN doctorexp e ON e.dr = d.dr LEFT JOIN doctorqd q ON q.dr = d.dr LEFT JOIN institute i ON i.university = q.university LEFT JOIN degree de ON de.degree_code = q.degree_code LEFT JOIN country ON country.country_code = c.country GROUP BY d.dr, d.name, d.email, d.picture, d.about, d.pmdc_verification, c.city_name, country.country_name, s.Specialization_name")
 
+    // console.log("rows", rows)
+
     const userIds = []
 
-    rows.forEach(user => {
+    rows?.forEach(user => {
       let imgBuffer = user.picture;
-      let base64Image = "data:image/png;base64," + imgBuffer.toString("base64");
+      let base64Image = "data:image/png;base64," + imgBuffer?.toString("base64");
       user.picture = base64Image
       userIds.push(user.dr)
     })

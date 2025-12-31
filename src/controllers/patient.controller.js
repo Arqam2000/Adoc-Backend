@@ -48,7 +48,7 @@ const loginPatient = async (req, res) => {
       });
     }
   
-    const [rows] = await pool.query("SELECT * FROM patient WHERE pmobile = ? AND ppassword = ?", [phone, password]);
+    const [rows] = await pool.query("SELECT * FROM patient WHERE pmobile = ? AND ppassword = ?", [phone.replace("+", ""), password]);
 
     if (rows.length === 0) {
       return res.status(401).json({
