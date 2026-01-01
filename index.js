@@ -17,6 +17,7 @@ app.use(cors({
     "http://localhost:5174",
     "http://localhost:3000",
     "https://kaysoftwares.com",
+    "https://myadoc.netlify.app"
   ],
   credentials: true,
   // allowedHeaders: ['Content-Type', 'Authorization']
