@@ -170,7 +170,7 @@ const login = async (req, res) => {
 
   const options = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: true,
     sameSite: "None",
     path: "/",
     maxAge: new Date(Date.now() + 24 * 60 * 60 * 1000),
