@@ -9,8 +9,6 @@ import cors from "cors"
 
 const app = express()
 
-app.use(express.json())
-app.use(cookieParser())
 app.use(cors({
   origin: [
     "http://localhost:5173",
@@ -22,6 +20,8 @@ app.use(cors({
   credentials: true,
   // allowedHeaders: ['Content-Type', 'Authorization']
 }))
+app.use(express.json())
+app.use(cookieParser())
 app.use("/uploads", express.static("uploads"));
 
 // test route
