@@ -6,7 +6,7 @@ export const verifyJWT = async (req, res, next) => {
         const token = req.cookies?.token || req.header("Authorization")?.replace("Bearer ", "")
 
         console.log("token from middleware:", token);
-        console.log("req cookies", req.cookie)
+        console.log("req cookies", req.cookies)
         
         if (!token) {
             return res.status(401).json({
@@ -15,7 +15,7 @@ export const verifyJWT = async (req, res, next) => {
             })
         }
 
-        const decodedToken = jwt.verify(token, "My Private")
+        const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
 
         console.log("decoded token", decodedToken)
 
