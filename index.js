@@ -10,18 +10,19 @@ import cors from "cors"
 const app = express()
 
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:3000",
-    "https://kaysoftwares.com",
-    "https://myadoc.netlify.app"
-  ],
+  // origin: [
+  //   "http://localhost:5173",
+  //   "http://localhost:5174",
+  //   "http://localhost:3000",
+  //   "https://kaysoftwares.com",
+  //   "https://myadoc.netlify.app"
+  // ],
+  origin: "https://kaysoftwares.com",
   credentials: true,
   // allowedHeaders: ['Content-Type', 'Authorization']
 }))
-app.use(express.json())
 app.use(cookieParser())
+app.use(express.json())
 app.use("/uploads", express.static("uploads"));
 
 // test route
