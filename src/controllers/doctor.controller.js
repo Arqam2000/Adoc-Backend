@@ -52,12 +52,12 @@ const register = async (req, res) => {
 
     const [rows] = await pool.query("SELECT email FROM mdoctor where email = ?", [email])
 
-    if (rows.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "email already exists"
-      })
-    }
+    // if (rows.length > 0) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "email already exists"
+    //   })
+    // }
 
     const [cityRows] = await pool.query("SELECT city_code FROM city WHERE city_name = ?", [city.name])
 
