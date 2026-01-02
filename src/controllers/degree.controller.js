@@ -27,7 +27,7 @@ const addDegree = async (req, res) => {
 
 const getAllDegrees = async (req, res) => {
     try {
-        const result = await pool.query(`SELECT * FROM Degree`)
+        const result = await pool.query(`SELECT * FROM degree`)
 
         const data = result[0]
 

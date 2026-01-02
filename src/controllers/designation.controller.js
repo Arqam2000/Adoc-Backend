@@ -27,7 +27,7 @@ const addDesignation = async (req, res) => {
 
 const getAllDesignations = async (req, res) => {
     try {
-        const result = await pool.query(`SELECT * FROM Designation`)
+        const result = await pool.query(`SELECT * FROM designation`)
 
         const data = result[0]
 
