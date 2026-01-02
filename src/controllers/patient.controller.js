@@ -22,11 +22,24 @@ const registerPatient = async (req, res) => {
 
     const [result] = await pool.query("INSERT INTO patient (pname, pusername, pemail, pmobile, ppassword, gender, blood_group) VALUES (?, ?, ?, ?, ?, ?, ?)", [name, username.toLowerCase(), email, phone, password, gender, bloodGroup]);
 
+    if (result.affectedRows === 0) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to register patient"
+      });
+    }
+
+    const [rows] = await pool.query(
+      "SELECT * FROM patient WHERE patient = ?",
+      [result.insertId]
+    );
+
     return res.status(201).json({
       success: true,
       message: "Patient registered successfully",
-      patientId: result.insertId
+      patient: rows[0]
     });
+    
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -40,7 +53,7 @@ const loginPatient = async (req, res) => {
   // Login logic to be implemented
   try {
     const { username, password } = req.body;
-  
+
     if (!username || !password) {
       return res.status(400).json({
         success: false,
@@ -49,19 +62,19 @@ const loginPatient = async (req, res) => {
     }
 
     const [rows] = await pool.query("SELECT * FROM patient WHERE pusername = ? AND ppassword = ?", [username.toLowerCase(), password]);
-    
+
     if (rows.length === 0) {
       return res.status(401).json({
         success: false,
         message: "Invalid username or password"
       });
     }
-  
+
     return res.status(200).json({
       success: true,
       message: "Login successful",
       patient: rows[0]
-    });   
+    });
 
   } catch (error) {
     return res.status(500).json({
@@ -136,7 +149,7 @@ const editName = async (req, res) => {
 const editEmail = async (req, res) => {
   try {
     const { id } = req.params;
-    const { pemail } = req.body;  
+    const { pemail } = req.body;
 
     if (!pemail) {
       return res.status(400).json({
@@ -205,7 +218,7 @@ const editPhone = async (req, res) => {
 const editBloodGroup = async (req, res) => {
   try {
     const { id } = req.params;
-    const { blood_group } = req.body; 
+    const { blood_group } = req.body;
 
     if (!blood_group) {
       return res.status(400).json({
@@ -282,13 +295,13 @@ const changePassword = async (req, res) => {
   }
 }
 
-export { 
-  registerPatient, 
-  loginPatient, 
-  getPatientProfile, 
-  editName, 
-  editEmail, 
-  editPhone, 
+export {
+  registerPatient,
+  loginPatient,
+  getPatientProfile,
+  editName,
+  editEmail,
+  editPhone,
   editBloodGroup,
   changePassword
 };

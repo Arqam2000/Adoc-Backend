@@ -63,13 +63,23 @@ const register = async (req, res) => {
 
     const [specializationRows] = await pool.query("SELECT Specialization_code FROM specialization WHERE Specialization_name = ?", [specialization])
 
-    await pool.query("INSERT INTO mdoctor (name, username, email, phone, city, city_code, state, country, password, gender, specialization_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [name, username.toLowerCase(), email, mobile, city.name, cityRows[0].city_code, state.name, country.name, password, gender, specializationRows[0].Specialization_code])
+    const [result] = await pool.query("INSERT INTO mdoctor (name, username, email, phone, city, city_code, state, country, password, gender, specialization_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [name, username.toLowerCase(), email, mobile, city.name, cityRows[0].city_code, state.name, country.name, password, gender, specializationRows[0].Specialization_code])
+
+    if (result.affectedRows === 0) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to register doctor"
+      })
+    }
+
+    const [doctorRows] = await pool.query("SELECT * FROM mdoctor WHERE dr = ?", [result.insertId])
 
     return res.status(201).json({
       success: true,
       message: "Registered successfully",
-      data: rows
+      doctor: doctorRows[0]
     })
+
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -155,7 +165,7 @@ const login = async (req, res) => {
 
   console.log("token from login", token)
 
-  const [updatedResult] = await pool.query("UPDATE mdoctor SET isLoggedIn = True WHERE dr = ?", [rows[0].dr])
+  const [updatedResult] = await pool.query("UPDATE mdoctor SET isLoggedIn = true WHERE dr = ?", [rows[0].dr])
 
   // console.log("updatedResult", updatedResult.)
 
@@ -185,16 +195,25 @@ const login = async (req, res) => {
 
 const logout = async (req, res) => {
   try {
-    const { dr } = req.user;
+    // const { dr } = req.user;
 
-    if (!dr) {
+    // if (!dr) {
+    //   return res.status(401).json({
+    //     success: false,
+    //     message: "Unauthorized request"
+    //   });
+    // }
+
+    const {id} = req.body;
+
+    if (!id) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized request"
       });
     }
 
-    const [updatedResult] = await pool.query("UPDATE mdoctor SET isLoggedIn = False WHERE dr = ?", [dr]);
+    const [updatedResult] = await pool.query("UPDATE mdoctor SET isLoggedIn = false WHERE dr = ?", [id]);
 
     if (updatedResult.affectedRows == 0) {
       return res.status(500).json({
