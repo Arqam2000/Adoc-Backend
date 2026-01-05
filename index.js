@@ -14,8 +14,8 @@ app.use(cors({
     "http://localhost:5173",
     "http://localhost:5174",
     "http://localhost:3000",
-    "https://kaysoftwares.com",
-    "https://myadoc.netlify.app"
+    "https://myadoc.netlify.app",
+    "https://kaysoftwares.com"
   ],
   // origin: "https://kaysoftwares.com",
   credentials: true,
