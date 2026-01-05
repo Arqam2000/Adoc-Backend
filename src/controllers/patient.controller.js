@@ -4,7 +4,9 @@ const registerPatient = async (req, res) => {
   try {
     const { name, username, email, phone, password, gender, bloodGroup } = req.body;
 
-    if (!name || !username || !phone || !gender || !bloodGroup) {
+    console.log("blood group", bloodGroup)
+
+    if (!name || !username || !phone || !gender) {
       return res.status(400).json({
         success: false,
         message: "All fields are required"
@@ -20,7 +22,7 @@ const registerPatient = async (req, res) => {
       });
     }
 
-    const [result] = await pool.query("INSERT INTO patient (pname, pusername, pemail, pmobile, ppassword, gender, blood_group) VALUES (?, ?, ?, ?, ?, ?, ?)", [name, username.toLowerCase(), email, phone, password, gender, bloodGroup]);
+    const [result] = await pool.query("INSERT INTO patient (pname, pusername, pemail, pmobile, ppassword, gender, blood_group) VALUES (?, ?, ?, ?, ?, ?, ?)", [name, username.toLowerCase(), email, phone, password, gender, bloodGroup || null]);
 
     if (result.affectedRows === 0) {
       return res.status(500).json({
