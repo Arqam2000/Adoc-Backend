@@ -19,6 +19,7 @@ app.use(cors({
   ],
   // origin: "https://kaysoftwares.com",
   credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With', 'Access-Control-Allow-Origin', 'Access-Control-Allow-Credentials', 'Set-Cookie', 'Cookie', 'X-Access-Token', 'X-Refresh-Token', 'Access-Control-Request-Method', 'Access-Control-Request-Headers'],
   // allowedHeaders: ['Content-Type', 'Authorization']
 }))
 app.use(cookieParser())
