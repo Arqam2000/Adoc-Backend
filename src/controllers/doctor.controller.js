@@ -263,7 +263,7 @@ const getDoctorProfile = async (req, res) => {
 
     let specialization_code = result[0].specialization_code
 
-    const [rows] = await pool.query("SELECT d.dr, d.name, d.email, d.picture, d.about, d.isLoggedIn, c.city_name, country.country_name, s.Specialization_name, GROUP_CONCAT(DISTINCT CONCAT(e.FromDate, ' - ', e.TillDate) SEPARATOR '; ') AS experiences, GROUP_CONCAT(DISTINCT CONCAT(de.degree_name, ' (', i.university_name, ')') SEPARATOR '; ') AS qualifications FROM mdoctor d JOIN specialization s ON s.Specialization_code = d.specialization_code JOIN city c ON c.city_code = d.city_code LEFT JOIN doctorexp e ON e.dr = d.dr LEFT JOIN doctorqd q ON q.dr = d.dr LEFT JOIN institute i ON i.university = q.university LEFT JOIN degree de ON de.degree_code = q.degree_code LEFT JOIN country ON country.country_code = c.country WHERE d.dr = ? GROUP BY d.dr, d.name, d.email, d.picture, d.about, c.city_name, country.country_name, s.Specialization_name", [id])
+    const [rows] = await pool.query("SELECT d.dr, d.name, d.username, d.phone, d.email, d.picture, d.about, d.isLoggedIn, c.city_name, country.country_name, s.Specialization_name, GROUP_CONCAT(DISTINCT CONCAT(e.FromDate, ' - ', e.TillDate) SEPARATOR '; ') AS experiences, GROUP_CONCAT(DISTINCT CONCAT(de.degree_name, ' (', i.university_name, ')') SEPARATOR '; ') AS qualifications FROM mdoctor d JOIN specialization s ON s.Specialization_code = d.specialization_code JOIN city c ON c.city_code = d.city_code LEFT JOIN doctorexp e ON e.dr = d.dr LEFT JOIN doctorqd q ON q.dr = d.dr LEFT JOIN institute i ON i.university = q.university LEFT JOIN degree de ON de.degree_code = q.degree_code LEFT JOIN country ON country.country_code = c.country WHERE d.dr = ? GROUP BY d.dr, d.name, d.email, d.picture, d.about, c.city_name, country.country_name, s.Specialization_name", [id])
 
     const [doctorvd] = await pool.query("SELECT * FROM doctorvd where dr = ?", [id])
 
@@ -369,9 +369,10 @@ const getAllDoctors = async (req, res) => {
 
 const editDoctorProfile = async (req, res) => {
   try {
-    const { dr = null, city_code = null, specialization_code = null, about = null, image = null, canDelete = null } = req.body
+    const { dr = null, name, email, phone, username, city_code = null, specialization_code = null, about = null, image = null, canDelete = null } = req.body
 
     console.log(req.body.canDelete)
+    console.log("body", req.body)
 
     if (canDelete) {
       await pool.query("UPDATE mdoctor SET city_code = NULL, specialization_code = NULL, picture = NULL, about = NULL WHERE dr = ?", [dr])
@@ -391,7 +392,7 @@ const editDoctorProfile = async (req, res) => {
 
       console.log("imageBuffer", imageBuffer)
 
-      const [result] = await pool.query("UPDATE mdoctor SET city_code = ?, specialization_code = ?, picture = ?, about = ?WHERE dr = ?", [city_code, specialization_code, imageBuffer, about, dr])
+      const [result] = await pool.query("UPDATE mdoctor SET name = ?, email = ?, phone = ?, username = ?, city_code = ?, specialization_code = ?, picture = ?, about = ? WHERE dr = ?", [name, email, phone, username, city_code, specialization_code, imageBuffer, about, dr])
 
       if (result.affectedRows == 0) {
         res.status(400).json({
