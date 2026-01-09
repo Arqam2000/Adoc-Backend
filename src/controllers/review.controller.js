@@ -137,8 +137,85 @@ const getReviewsByDoctor = async (req, res) => {
   }
 }
 
+const updateReview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { overallSatisfaction, waitingTimeMins, consultationTimeMins, recommend, patientSatisfaction, staffBehaviour, clinicEnvironment, remarks, postAnonymously} = req.body;
+
+    if (overallSatisfaction === "Yes"){
+      overallSatisfaction = "Y"
+    } 
+    else {
+      overallSatisfaction = "N"
+    }
+
+    if (recommend === "Yes"){
+      recommend = "Y"
+    } 
+    else {
+      recommend = "N"
+    }
+
+    if (patientSatisfaction === "Yes"){
+      patientSatisfaction = 1
+    } else {
+      patientSatisfaction = 0
+    }
+
+    if(staffBehaviour === "Unprofessional"){
+      staffBehaviour = 1
+    }else if(staffBehaviour === "Needs Improvement"){
+      staffBehaviour = 2
+    } else if(staffBehaviour === "Average"){
+      staffBehaviour = 3
+    } else if(staffBehaviour === "Professional"){
+      staffBehaviour = 4
+    } else if(staffBehaviour === "Excellent"){
+      staffBehaviour = 5
+    }
+
+    if(clinicEnvironment === "Bad"){
+      clinicEnvironment = 1
+    } else if(clinicEnvironment === "Poor"){
+      clinicEnvironment = 2
+    } else if(clinicEnvironment === "Average"){
+      clinicEnvironment = 3
+    } else if(clinicEnvironment === "Good"){
+      clinicEnvironment = 4
+    } else if(clinicEnvironment === "Excellent"){
+      clinicEnvironment = 5
+    }
+
+    if (postAnonymously ){
+      postAnonymously = "Y"
+    } else {
+      postAnonymously = "N"
+    }
+
+    const [result] = await pool.query("UPDATE review SET overall_satisfaction = ?, waiting_time = ?, consultation_time = ?, recommend = ?, patient_satisfaction = ?, staff_behaviour = ?, clinic_environment = ?, remarks = ?, anonymous = ? WHERE id = ?", [overallSatisfaction, waitingTimeMins, consultationTimeMins, recommend, patientSatisfaction, staffBehaviour, clinicEnvironment, remarks, postAnonymously, id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Review not found or no changes made"
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Review updated successfully"
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred while updating the review",
+      error
+    });
+  }
+}
+
 export { 
   addReview, 
   getReviewsByPatient, 
-  getReviewsByDoctor 
+  getReviewsByDoctor,
+  updateReview
 };
