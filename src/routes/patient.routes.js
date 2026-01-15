@@ -1,10 +1,13 @@
 import { Router } from "express";
-import { changePassword, editBloodGroup, editEmail, editName, editPhone, getPatientProfile, loginPatient, registerPatient } from "../controllers/patient.controller.js";
+import { changePassword, editBloodGroup, editEmail, editName, editPhone, getPatientProfile, loginPatient, registerPatient, requestOTP, resetPassword, verifyOTP } from "../controllers/patient.controller.js";
 
 const router = Router()
 
 router.route("/register").post(registerPatient)
 router.route("/login").post(loginPatient)
+router.route("/request-otp").post(requestOTP);
+router.route("/verify-otp").post(verifyOTP);
+router.route("/reset-password").post(resetPassword);
 router.route("/:id").get(getPatientProfile);
 router.route("/edit-name/:id").put(editName);
 router.route("/edit-email/:id").put(editEmail);

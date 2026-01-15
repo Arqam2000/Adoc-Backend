@@ -1,6 +1,10 @@
 import e from "express";
 import { pool } from "../../dbConfig.js";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+import generateOTP from "../utils/generateOTP.js";
+import sendOTP from "../utils/twilio.js";
+import { sendOTPEmail } from "../utils/nodemailer.js";
 
 // const register = async (req, res) => {
 //     try {
@@ -234,6 +238,146 @@ const logout = async (req, res) => {
       success: false,
       message: "Something went wrong while logging out",
       error: error.message
+    });
+  }
+}
+
+const requestOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    console.log("email", email)
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required"
+      });
+    }
+
+    const [rows] = await pool.query("SELECT * FROM mdoctor WHERE email = ?", [email]);
+
+    if (rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Email not registered"
+      });
+    }
+  
+    const otp = generateOTP();
+    const otpHash = await bcrypt.hash(otp, 10);
+
+    await pool.query("DELETE FROM otps WHERE email = ?", [email]);
+
+    let otpExpiry = new Date(Date.now() + 5 * 60000); 
+
+    await pool.query(
+      "INSERT INTO otps (email, otp_hash, expires_at) VALUES (?, ?, ?)",
+      [email, otpHash, otpExpiry]
+    );
+  
+    const emailRes = await sendOTPEmail(otp, otpExpiry, email, "OTP");
+  
+    return res.json({ success: true, message: "OTP sent", emailRes });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while requesting OTP",
+      error: error
+    });
+  }
+};
+
+const verifyOTP = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+  
+    const [rows] = await pool.query(
+      "SELECT * FROM otps WHERE email = ?",
+      [email]
+    );
+  
+    if (!rows.length || rows[0].expires_at < new Date()) {
+      return res.status(400).json({ success: false, message: "OTP expired" });
+    }
+  
+    const isValid = await bcrypt.compare(otp, rows[0].otp_hash);
+
+    if (!isValid) {
+      return res.status(400).json({ success: false, message: "Invalid OTP" });
+    }
+  
+    const [users] = await pool.query(
+      "SELECT * FROM mdoctor WHERE email = ?",
+      [email]
+    );
+
+    if (!users.length) {
+      return res.status(400).json({ success: false, message: "User not found" });
+    } 
+  
+    await pool.query("DELETE FROM otps WHERE email = ?", [email]);
+  
+    // const token = jwt.sign({ id: users[0].dr }, process.env.JWT_SECRET, {
+    //   expiresIn: "7d"
+    // });
+  
+    return res.status(200).json({ 
+      success: true, 
+      message: "OTP verified", 
+      doctor: users[0] 
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while verifying OTP",
+      error: error
+    });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const {password, confirmPassword, email} = req.body;
+
+    if (!password || !confirmPassword || !email) {
+      return res.status(400).json({
+        success: false,
+        message: "Password, confirm password and email are required"
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Password and confirm password do not match"
+      });
+    }
+
+    const [result] = await pool.query("UPDATE mdoctor SET password = ? WHERE email = ?", [password, email]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Doctor not found"
+      });
+    }
+
+    const [rows] = await pool.query("SELECT * FROM mdoctor WHERE email = ?", [email]);
+
+    return res.status(200).json({
+      success: true,
+      message: "Password reset successfully",
+      doctor: rows[0]
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Cannot reset password",
+      error
     });
   }
 }
@@ -742,6 +886,9 @@ export {
   register,
   login,
   logout,
+  requestOTP,
+  verifyOTP,
+  resetPassword,
   getDoctorProfile,
   getAllDoctors,
   editDoctorProfile,
