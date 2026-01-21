@@ -12,7 +12,7 @@ router.route("/verify-otp").post(verifyOTP)
 router.route("/reset-password").post(resetPassword);
 // router.route("/logout").post(logout)
 router.route("/get-doctor/:id").post(getDoctorProfile)
-router.route("/get-alldoctors").get(getAllDoctors)
+router.route("/get-alldoctors").post(getAllDoctors)
 router.route("/edit-doctor").post( editDoctorProfile)
 router.route("/edit-doctorwt").post( editDoctorWaitingTime)
 router.route("/delete-doctor").post( deleteDoctorProfile)

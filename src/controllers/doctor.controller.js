@@ -208,7 +208,7 @@ const logout = async (req, res) => {
     //   });
     // }
 
-    const {id} = req.body;
+    const { id } = req.body;
 
     if (!id) {
       return res.status(401).json({
@@ -263,21 +263,21 @@ const requestOTP = async (req, res) => {
         message: "Email not registered"
       });
     }
-  
+
     const otp = generateOTP();
     const otpHash = await bcrypt.hash(otp, 10);
 
     await pool.query("DELETE FROM otps WHERE email = ?", [email]);
 
-    let otpExpiry = new Date(Date.now() + 5 * 60000); 
+    let otpExpiry = new Date(Date.now() + 5 * 60000);
 
     await pool.query(
       "INSERT INTO otps (email, otp_hash, expires_at) VALUES (?, ?, ?)",
       [email, otpHash, otpExpiry]
     );
-  
+
     const emailRes = await sendOTPEmail(otp, otpExpiry, email, "OTP");
-  
+
     return res.json({ success: true, message: "OTP sent", emailRes });
 
   } catch (error) {
@@ -292,22 +292,22 @@ const requestOTP = async (req, res) => {
 const verifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
-  
+
     const [rows] = await pool.query(
       "SELECT * FROM otps WHERE email = ?",
       [email]
     );
-  
+
     if (!rows.length || rows[0].expires_at < new Date()) {
       return res.status(400).json({ success: false, message: "OTP expired" });
     }
-  
+
     const isValid = await bcrypt.compare(otp, rows[0].otp_hash);
 
     if (!isValid) {
       return res.status(400).json({ success: false, message: "Invalid OTP" });
     }
-  
+
     const [users] = await pool.query(
       "SELECT * FROM mdoctor WHERE email = ?",
       [email]
@@ -315,18 +315,18 @@ const verifyOTP = async (req, res) => {
 
     if (!users.length) {
       return res.status(400).json({ success: false, message: "User not found" });
-    } 
-  
+    }
+
     await pool.query("DELETE FROM otps WHERE email = ?", [email]);
-  
+
     // const token = jwt.sign({ id: users[0].dr }, process.env.JWT_SECRET, {
     //   expiresIn: "7d"
     // });
-  
-    return res.status(200).json({ 
-      success: true, 
-      message: "OTP verified", 
-      doctor: users[0] 
+
+    return res.status(200).json({
+      success: true,
+      message: "OTP verified",
+      doctor: users[0]
     });
 
   } catch (error) {
@@ -340,7 +340,7 @@ const verifyOTP = async (req, res) => {
 
 const resetPassword = async (req, res) => {
   try {
-    const {password, confirmPassword, email} = req.body;
+    const { password, confirmPassword, email } = req.body;
 
     if (!password || !confirmPassword || !email) {
       return res.status(400).json({
@@ -448,9 +448,90 @@ const getDoctorProfile = async (req, res) => {
 
 const getAllDoctors = async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT d.dr, d.name, d.email, d.phone, d.picture, d.about, d.pmdc_verification, d.appointment_type, d.`is available for free video consultation`, c.city_name, country.country_name, s.Specialization_name, GROUP_CONCAT(DISTINCT CONCAT(e.FromDate, ' - ', e.TillDate) SEPARATOR '; ') AS experiences, GROUP_CONCAT(DISTINCT CONCAT(de.degree_name, ' (', i.university_name, ')') SEPARATOR '; ') AS qualifications FROM mdoctor d JOIN specialization s ON s.Specialization_code = d.specialization_code JOIN city c ON c.city_code = d.city_code LEFT JOIN doctorexp e ON e.dr = d.dr LEFT JOIN doctorqd q ON q.dr = d.dr LEFT JOIN institute i ON i.university = q.university LEFT JOIN degree de ON de.degree_code = q.degree_code LEFT JOIN country ON country.country_code = c.country GROUP BY d.dr, d.name, d.email, d.picture, d.about, d.pmdc_verification, c.city_name, country.country_name, s.Specialization_name")
+    const { isMostExperienced, isLowestFees, isHighestRated, isAvailableToday } = req.body;
 
-    // console.log("rows", rows)
+    // const [rows] = await pool.query("SELECT d.dr, d.name, d.email, d.phone, d.picture, d.about, d.pmdc_verification, d.appointment_type, d.`is available for free video consultation`, c.city_name, country.country_name, s.Specialization_name, GROUP_CONCAT(DISTINCT CONCAT(e.FromDate, ' - ', e.TillDate) SEPARATOR '; ') AS experiences, GROUP_CONCAT(DISTINCT CONCAT(de.degree_name, ' (', i.university_name, ')') SEPARATOR '; ') AS qualifications FROM mdoctor d JOIN specialization s ON s.Specialization_code = d.specialization_code JOIN city c ON c.city_code = d.city_code LEFT JOIN doctorexp e ON e.dr = d.dr LEFT JOIN doctorqd q ON q.dr = d.dr LEFT JOIN institute i ON i.university = q.university LEFT JOIN degree de ON de.degree_code = q.degree_code LEFT JOIN country ON country.country_code = c.country GROUP BY d.dr, d.name, d.email, d.picture, d.about, d.pmdc_verification, c.city_name, country.country_name, s.Specialization_name")
+
+    let orderByClause = ""
+    const today = new Date().toLocaleDateString("en-US", { weekday: "short" });
+    // Example: "Mon", "Tue"
+
+
+    // priority order (you can change priority)
+    if (isAvailableToday) {
+      orderByClause = "ORDER BY is_available_today DESC";
+    } else if (isMostExperienced) {
+      orderByClause = "ORDER BY total_experience DESC";
+    } else if (isLowestFees) {
+      orderByClause = "ORDER BY min_fees ASC";
+    } else if (isHighestRated) {
+      orderByClause = "ORDER BY avg_rating DESC";
+    }
+
+    const [rows] = await pool.query(`
+  SELECT 
+    d.dr,
+    d.name,
+    d.email,
+    d.phone,
+    d.picture,
+    d.about,
+    d.pmdc_verification,
+    d.appointment_type,
+    d.\`is available for free video consultation\`,
+    c.city_name,
+    country.country_name,
+    s.Specialization_name,
+
+    /* EXPERIENCE */
+    COALESCE(SUM(TIMESTAMPDIFF(YEAR, e.FromDate, e.TillDate)), 0) AS total_experience,
+
+    /* FEES */
+    COALESCE(MIN(hd.fees), 0) AS min_fees,
+
+    /* RATINGS */
+    COALESCE(r.rate / NULLIF(r.rew, 0), 0) AS avg_rating,
+
+    CASE 
+  WHEN 
+    EXISTS (
+      SELECT 1 
+      FROM doctorhd h 
+      WHERE h.dr = d.dr AND h.day = ?
+    )
+    AND
+    EXISTS (
+      SELECT 1 
+      FROM doctorvd v 
+      WHERE v.dr = d.dr AND v.day = ?
+    )
+    THEN 1 ELSE 0
+    END AS is_available_today,
+
+    GROUP_CONCAT(DISTINCT CONCAT(e.FromDate, ' - ', e.TillDate) SEPARATOR '; ') AS experiences,
+    GROUP_CONCAT(DISTINCT CONCAT(de.degree_name, ' (', i.university_name, ')') SEPARATOR '; ') AS qualifications
+
+  FROM mdoctor d
+  JOIN specialization s ON s.Specialization_code = d.specialization_code
+  JOIN city c ON c.city_code = d.city_code
+  LEFT JOIN country ON country.country_code = c.country
+  LEFT JOIN doctorexp e ON e.dr = d.dr
+  LEFT JOIN doctorqd q ON q.dr = d.dr
+  LEFT JOIN institute i ON i.university = q.university
+  LEFT JOIN degree de ON de.degree_code = q.degree_code
+  LEFT JOIN doctorhd hd ON hd.dr = d.dr
+  LEFT JOIN (
+    SELECT dr, COUNT(review) AS rew, SUM(rating) AS rate
+    FROM doctorrd
+    GROUP BY dr
+  ) r ON r.dr = d.dr
+
+  GROUP BY d.dr
+  ${orderByClause}
+`, [today, today]);
+
+
+    console.log("rows", rows)
 
     const userIds = []
 
@@ -830,7 +911,7 @@ const deleteDoctorExpFromId = async (req, res) => {
 
 const editDoctorWaitingTime = async (req, res) => {
   try {
-    const {waitingTime, dr} = req.body
+    const { waitingTime, dr } = req.body
 
     if (!waitingTime) {
       return res.status(400).json({
@@ -849,9 +930,9 @@ const editDoctorWaitingTime = async (req, res) => {
     }
 
     return res.status(200).json({
-        success: true,
-        message: "Waiting time saved successfuly"
-      })
+      success: true,
+      message: "Waiting time saved successfuly"
+    })
 
   } catch (error) {
     return res.status(500).json({
@@ -879,7 +960,7 @@ const saveAppointmentTypes = async (req, res) => {
       error
     })
   }
-    
+
 }
 
 export {
