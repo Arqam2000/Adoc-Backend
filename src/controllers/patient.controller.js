@@ -118,7 +118,9 @@ const requestOTP = async (req, res) => {
 
     await pool.query("DELETE FROM otps WHERE email = ?", [email]);
 
-    let otpExpiry = new Date(Date.now() + 5 * 60000); 
+    let otpExpiry = new Date(Date.now() + 5 * 60000);
+    
+    console.log("otp expiry", otpExpiry)
 
     await pool.query(
       "INSERT INTO otps (email, otp_hash, expires_at) VALUES (?, ?, ?)",
@@ -149,7 +151,7 @@ const verifyOTP = async (req, res) => {
       [email]
     );
   
-    if (!rows.length || rows[0].expires_at < new Date()) {
+    if (!rows.length || new Date(rows[0].expires_at).getTime() < Date.now()) {
       return res.status(400).json({ success: false, message: "OTP expired" });
     }
   

@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 
 export async function sendOTPEmail( otp, otpExpiry, email, emailType) {
-  console.log("sendOTPEmail called with:", email, emailType);
+  console.log("sendOTPEmail called with:", email, emailType, otpExpiry);
   try {
 
     const transporter = nodemailer.createTransport({
