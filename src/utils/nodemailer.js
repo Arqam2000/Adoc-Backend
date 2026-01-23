@@ -20,7 +20,7 @@ export async function sendOTPEmail( otp, otpExpiry, email, emailType) {
       subject: 'Your One-Time Password (OTP) for Verification', // Subject line
       html: `<p style="font-size: 16px;">Hello,
 
-            Your One-Time Password (OTP) is: </br> <span style="font-weight: bold;">${otp}</span></br> This OTP is valid for the next ${otpExpiry} minutes.
+            Your One-Time Password (OTP) is: </br> <span style="font-weight: bold;">${otp}</span></br> This OTP is valid for the ${otpExpiry} minutes.
             Please do not share this code with anyone for security reasons.
 
             If you did not request this OTP, please ignore this email or contact our support team immediately.

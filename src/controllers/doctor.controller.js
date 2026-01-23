@@ -458,18 +458,31 @@ const getAllDoctors = async (req, res) => {
     // const [rows] = await pool.query("SELECT d.dr, d.name, d.email, d.phone, d.picture, d.about, d.pmdc_verification, d.appointment_type, d.`is available for free video consultation`, c.city_name, country.country_name, s.Specialization_name, GROUP_CONCAT(DISTINCT CONCAT(e.FromDate, ' - ', e.TillDate) SEPARATOR '; ') AS experiences, GROUP_CONCAT(DISTINCT CONCAT(de.degree_name, ' (', i.university_name, ')') SEPARATOR '; ') AS qualifications FROM mdoctor d JOIN specialization s ON s.Specialization_code = d.specialization_code JOIN city c ON c.city_code = d.city_code LEFT JOIN doctorexp e ON e.dr = d.dr LEFT JOIN doctorqd q ON q.dr = d.dr LEFT JOIN institute i ON i.university = q.university LEFT JOIN degree de ON de.degree_code = q.degree_code LEFT JOIN country ON country.country_code = c.country GROUP BY d.dr, d.name, d.email, d.picture, d.about, d.pmdc_verification, c.city_name, country.country_name, s.Specialization_name")
 
     let orderByClause = ""
+    let whereClause = "";
     const today = new Date().toLocaleDateString("en-US", { weekday: "short" });
     // Example: "Mon", "Tue"
 
 
     // priority order (you can change priority)
     if (isAvailableToday) {
-      orderByClause = "ORDER BY is_available_today DESC";
-    } else if (isMostExperienced) {
+      // orderByClause = "ORDER BY is_available_today DESC";
+      whereClause = `
+    WHERE 
+      EXISTS (
+        SELECT 1 FROM doctorhd h 
+        WHERE h.dr = d.dr AND h.day = ?
+      )
+      OR EXISTS (
+        SELECT 1 FROM doctorvd v 
+        WHERE v.dr = d.dr AND v.day = ?
+      )
+  `;
+    } 
+    if (!isAvailableToday && isMostExperienced) {
       orderByClause = "ORDER BY total_experience DESC";
-    } else if (isLowestFees) {
+    } else if (!isAvailableToday && isLowestFees) {
       orderByClause = "ORDER BY min_fees ASC";
-    } else if (isHighestRated) {
+    } else if (!isAvailableToday && isHighestRated) {
       orderByClause = "ORDER BY avg_rating DESC";
     }
 
@@ -504,7 +517,7 @@ const getAllDoctors = async (req, res) => {
       FROM doctorhd h 
       WHERE h.dr = d.dr AND h.day = ?
     )
-    AND
+    OR
     EXISTS (
       SELECT 1 
       FROM doctorvd v 
@@ -531,9 +544,11 @@ const getAllDoctors = async (req, res) => {
     GROUP BY dr
   ) r ON r.dr = d.dr
 
+  ${whereClause}
+
   GROUP BY d.dr
   ${orderByClause}
-`, [today, today]);
+`, isAvailableToday ? [today, today, today, today] : [today, today]);
 
 
     console.log("rows", rows)
