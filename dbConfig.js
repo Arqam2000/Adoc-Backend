@@ -16,32 +16,34 @@ import mysql from "mysql2/promise"
 //   connectionLimit: 10,
 // });
 
-let pool;
+export const pool = mysql.createPool(process.env.DATABASE_URL);
 
-async function initDB() {
-  while (true) {
-    try {
-      pool = mysql.createPool({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME,
-        port: 3306,
-        waitForConnections: true,
-        connectionLimit: 10,
-      });
+// let pool;
 
-      // 🔥 Force DNS + TCP check
-      await pool.query("SELECT 1");
-      console.log("✅ MySQL connected");
-      break;
-    } catch (err) {
-      console.error("❌ MySQL not ready:", err.code);
-      await new Promise(r => setTimeout(r, 5000));
-    }
-  }
-}
+// async function initDB() {
+//   while (true) {
+//     try {
+//       pool = mysql.createPool({
+//         host: process.env.DB_HOST,
+//         user: process.env.DB_USER,
+//         password: process.env.DB_PASSWORD,
+//         database: process.env.DB_NAME,
+//         port: 3306,
+//         waitForConnections: true,
+//         connectionLimit: 10,
+//       });
 
-await initDB();
+//       // 🔥 Force DNS + TCP check
+//       await pool.query("SELECT 1");
+//       console.log("✅ MySQL connected");
+//       break;
+//     } catch (err) {
+//       console.error("❌ MySQL not ready:", err.code);
+//       await new Promise(r => setTimeout(r, 5000));
+//     }
+//   }
+// }
 
-export { pool };
+// await initDB();
+
+// export { pool };
