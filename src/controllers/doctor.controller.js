@@ -477,7 +477,7 @@ const getAllDoctors = async (req, res) => {
         WHERE v.dr = d.dr AND v.day = ?
       )
   `;
-    } 
+    }
     if (!isAvailableToday && isMostExperienced) {
       orderByClause = "ORDER BY total_experience DESC";
     } else if (!isAvailableToday && isLowestFees) {
@@ -507,8 +507,12 @@ const getAllDoctors = async (req, res) => {
     /* FEES */
     COALESCE(MIN(hd.fees), 0) AS min_fees,
 
-    /* RATINGS */
-    COALESCE(r.rate / NULLIF(r.rew, 0), 0) AS avg_rating,
+    /* RATINGS 
+    COALESCE(r.rate / NULLIF(r.rew, 0), 0) AS avg_rating, */
+    COALESCE(
+      MAX(r.rate) / NULLIF(MAX(r.rew), 0),
+      0
+    ) AS avg_rating,
 
     CASE 
   WHEN 
