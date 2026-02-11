@@ -446,113 +446,301 @@ const getDoctorProfile = async (req, res) => {
   }
 }
 
+// const getAllDoctors = async (req, res) => {
+//   try {
+//     const {
+//       isMostExperienced = false,
+//       isLowestFees = false,
+//       isHighestRated = false,
+//       isAvailableToday = false,
+//       isAvailableTodayForVideoConsultation = false
+//     } = req.body || {};
+
+//     // const [rows] = await pool.query("SELECT d.dr, d.name, d.email, d.phone, d.picture, d.about, d.pmdc_verification, d.appointment_type, d.`is available for free video consultation`, c.city_name, country.country_name, s.Specialization_name, GROUP_CONCAT(DISTINCT CONCAT(e.FromDate, ' - ', e.TillDate) SEPARATOR '; ') AS experiences, GROUP_CONCAT(DISTINCT CONCAT(de.degree_name, ' (', i.university_name, ')') SEPARATOR '; ') AS qualifications FROM mdoctor d JOIN specialization s ON s.Specialization_code = d.specialization_code JOIN city c ON c.city_code = d.city_code LEFT JOIN doctorexp e ON e.dr = d.dr LEFT JOIN doctorqd q ON q.dr = d.dr LEFT JOIN institute i ON i.university = q.university LEFT JOIN degree de ON de.degree_code = q.degree_code LEFT JOIN country ON country.country_code = c.country GROUP BY d.dr, d.name, d.email, d.picture, d.about, d.pmdc_verification, c.city_name, country.country_name, s.Specialization_name")
+
+//     let orderByClause = ""
+//     let whereClause = "";
+//     const today = new Date().toLocaleDateString("en-US", { weekday: "short" });
+//     // Example: "Mon", "Tue"
+
+
+//     // priority order (you can change priority)
+//     if (isAvailableToday) {
+//       // orderByClause = "ORDER BY is_available_today DESC";
+//       whereClause = `
+//     WHERE 
+//       EXISTS (
+//         SELECT 1 FROM doctorhd h 
+//         WHERE h.dr = d.dr AND h.day = ?
+//       )   
+//   `;
+//     }
+//     if (isAvailableTodayForVideoConsultation) {
+//       whereClause = `
+//     WHERE 
+//       EXISTS (
+//         SELECT 1 FROM doctorvd v 
+//         WHERE v.dr = d.dr AND v.day = ?
+//       )   
+//   `;
+//     }
+//     if (!isAvailableToday && isMostExperienced) {
+//       orderByClause = "ORDER BY total_experience DESC";
+//     } else if (!isAvailableToday && isLowestFees) {
+//       orderByClause = "ORDER BY min_fees ASC";
+//     } else if (!isAvailableToday && isHighestRated) {
+//       orderByClause = "ORDER BY avg_rating DESC";
+//     }
+
+//     const [rows] = await pool.query(`
+//   SELECT 
+//     d.dr,
+//     d.name,
+//     d.email,
+//     d.phone,
+//     d.picture,
+//     d.about,
+//     d.pmdc_verification,
+//     d.appointment_type,
+//     d.\`is available for free video consultation\`,
+//     c.city_name,
+//     country.country_name,
+//     s.Specialization_name,
+
+//     /* EXPERIENCE */
+//     COALESCE(SUM(TIMESTAMPDIFF(YEAR, e.FromDate, e.TillDate)), 0) AS total_experience,
+
+//     /* FEES */
+//     COALESCE(MIN(hd.fees), 0) AS min_fees,
+
+//     /* RATINGS 
+//     COALESCE(r.rate / NULLIF(r.rew, 0), 0) AS avg_rating, */
+//     COALESCE(
+//       MAX(r.rate) / NULLIF(MAX(r.rew), 0),
+//       0
+//     ) AS avg_rating,
+
+//     CASE 
+//   WHEN 
+//     EXISTS (
+//       SELECT 1 
+//       FROM doctorhd h 
+//       WHERE h.dr = d.dr AND h.day = ?
+//     )
+//     THEN 1 ELSE 0
+//     END AS is_available_today,
+//   WHEN
+//     EXISTS (
+//       SELECT 1 
+//       FROM doctorvd v 
+//       WHERE v.dr = d.dr AND v.day = ?
+//     )
+//     THEN 1 ELSE 0
+//     END AS is_available_today_for_video,
+
+//     GROUP_CONCAT(DISTINCT CONCAT(e.FromDate, ' - ', e.TillDate) SEPARATOR '; ') AS experiences,
+//     GROUP_CONCAT(DISTINCT CONCAT(de.degree_name, ' (', i.university_name, ')') SEPARATOR '; ') AS qualifications
+
+//   FROM mdoctor d
+//   JOIN specialization s ON s.Specialization_code = d.specialization_code
+//   JOIN city c ON c.city_code = d.city_code
+//   LEFT JOIN country ON country.country_code = c.country
+//   LEFT JOIN doctorexp e ON e.dr = d.dr
+//   LEFT JOIN doctorqd q ON q.dr = d.dr
+//   LEFT JOIN institute i ON i.university = q.university
+//   LEFT JOIN degree de ON de.degree_code = q.degree_code
+//   LEFT JOIN doctorhd hd ON hd.dr = d.dr
+//   LEFT JOIN (
+//     SELECT dr, COUNT(review) AS rew, SUM(rating) AS rate
+//     FROM doctorrd
+//     GROUP BY dr
+//   ) r ON r.dr = d.dr
+
+//   ${whereClause}
+
+//   GROUP BY d.dr
+//   ${orderByClause}
+// `, [today, today, today, today]);
+
+
+//     console.log("rows", rows)
+
+//     const userIds = []
+
+//     rows?.forEach(user => {
+//       let imgBuffer = user.picture;
+//       let base64Image = "data:image/png;base64," + imgBuffer?.toString("base64");
+//       user.picture = base64Image
+//       userIds.push(user.dr)
+//     })
+
+//     // console.log("userIds:", userIds)
+
+//     const [doctorexp] = await pool.query("SELECT * FROM doctorexp")
+
+//     // const [reviews] = await pool.query("select count(review) as rew,sum(rating) as rate, (rate*0.01)/rew as satisfaction from doctorRD")
+
+//     const reviews = []
+//     const hospitals = []
+//     const videoTimings = []
+
+//     for (const element of userIds) {
+//       // const [result] = await pool.query("select rew, rate,(rate * .01) / rew as satisfaction from(select count(review) as rew, sum(rating) as rate from doctorRD) t where dr = ?", [element])
+
+//       // const [result] = await pool.query("select rew, rate, (rate * .01) / rew as satisfaction from (select dr, count(review) as rew, sum(rating) as rate from doctorRD group by dr) t where dr = ?", [element])
+
+//       const [result] = await pool.query("select rew, rate, coalesce(rate / nullif(rew, 0), 0) as avg_rating, coalesce(((rate / nullif(rew, 0)) / 5) * 100, 0) as satisfaction_percentage from (select dr, count(review) as rew, sum(rating) as rate from doctorrd group by dr) t where dr = ?", [element])
+
+//       reviews.push({ dr: element, ...result[0] })
+//       // console.log("result:", result)
+
+//       const [doctorvd] = await pool.query("SELECT * FROM doctorvd where dr = ?", [element])
+
+//       videoTimings.push({ dr: element, videoDetails: doctorvd })
+
+//       const [doctorhd] = await pool.query("SELECT doctorhd, dr, h.hospital_name, d.DDesig, timein, timeout, day, fees FROM `doctorhd` JOIN hospital h ON h.hospital_code = doctorhd.hospital_code JOIN designation d ON d.Desig = doctorhd.Desig WHERE dr = ?", [element])
+
+//       hospitals.push({ dr: element, hospitalDetails: doctorhd })
+
+//     }
+
+//     // console.log("rows:", rows)
+
+//     return res.status(200).json({
+//       success: true,
+//       data: rows,
+//       doctorexp,
+//       reviews,
+//       hospitals,
+//       videoTimings
+//     })
+
+//   } catch (error) {
+//     return res.status(500).json({
+//       success: false,
+//       message: "Something went wrong while fetching doctors",
+//       error
+//     })
+//   }
+// }
 const getAllDoctors = async (req, res) => {
   try {
     const {
       isMostExperienced = false,
       isLowestFees = false,
       isHighestRated = false,
-      isAvailableToday = false
+      isAvailableToday = false,
+      isAvailableTodayForVideoConsultation = false
     } = req.body || {};
 
-    // const [rows] = await pool.query("SELECT d.dr, d.name, d.email, d.phone, d.picture, d.about, d.pmdc_verification, d.appointment_type, d.`is available for free video consultation`, c.city_name, country.country_name, s.Specialization_name, GROUP_CONCAT(DISTINCT CONCAT(e.FromDate, ' - ', e.TillDate) SEPARATOR '; ') AS experiences, GROUP_CONCAT(DISTINCT CONCAT(de.degree_name, ' (', i.university_name, ')') SEPARATOR '; ') AS qualifications FROM mdoctor d JOIN specialization s ON s.Specialization_code = d.specialization_code JOIN city c ON c.city_code = d.city_code LEFT JOIN doctorexp e ON e.dr = d.dr LEFT JOIN doctorqd q ON q.dr = d.dr LEFT JOIN institute i ON i.university = q.university LEFT JOIN degree de ON de.degree_code = q.degree_code LEFT JOIN country ON country.country_code = c.country GROUP BY d.dr, d.name, d.email, d.picture, d.about, d.pmdc_verification, c.city_name, country.country_name, s.Specialization_name")
-
-    let orderByClause = ""
-    let whereClause = "";
     const today = new Date().toLocaleDateString("en-US", { weekday: "short" });
-    // Example: "Mon", "Tue"
 
+    let whereConditions = [];
+    let orderByClause = "";
+    let params = [];
 
-    // priority order (you can change priority)
+    /* WHERE FILTERS */
     if (isAvailableToday) {
-      // orderByClause = "ORDER BY is_available_today DESC";
-      whereClause = `
-    WHERE 
+      whereConditions.push(`
       EXISTS (
-        SELECT 1 FROM doctorhd h 
+        SELECT 1
+        FROM doctorhd h
         WHERE h.dr = d.dr AND h.day = ?
       )
-      OR EXISTS (
-        SELECT 1 FROM doctorvd v 
+    `);
+      params.push(today);
+    }
+
+    if (isAvailableTodayForVideoConsultation) {
+      whereConditions.push(`
+      EXISTS (
+        SELECT 1
+        FROM doctorvd v
         WHERE v.dr = d.dr AND v.day = ?
       )
-  `;
+    `);
+      params.push(today);
     }
-    if (!isAvailableToday && isMostExperienced) {
+
+    let whereClause = "";
+    if (whereConditions.length > 0) {
+      whereClause = "WHERE " + whereConditions.join(" AND ");
+    }
+
+    /* ORDER BY */
+    if (isMostExperienced) {
       orderByClause = "ORDER BY total_experience DESC";
-    } else if (!isAvailableToday && isLowestFees) {
+    } else if (isLowestFees) {
       orderByClause = "ORDER BY min_fees ASC";
-    } else if (!isAvailableToday && isHighestRated) {
+    } else if (isHighestRated) {
       orderByClause = "ORDER BY avg_rating DESC";
     }
 
-    const [rows] = await pool.query(`
-  SELECT 
-    d.dr,
-    d.name,
-    d.email,
-    d.phone,
-    d.picture,
-    d.about,
-    d.pmdc_verification,
-    d.appointment_type,
-    d.\`is available for free video consultation\`,
-    c.city_name,
-    country.country_name,
-    s.Specialization_name,
+    /* CASE SELECT params (ALWAYS FIRST) */
+    const selectParams = [today, today];
 
-    /* EXPERIENCE */
-    COALESCE(SUM(TIMESTAMPDIFF(YEAR, e.FromDate, e.TillDate)), 0) AS total_experience,
+    const [rows] = await pool.query(
+      `
+    SELECT 
+      d.dr,
+      d.name,
+      d.email,
+      d.phone,
+      d.picture,
+      d.about,
+      d.pmdc_verification,
+      d.appointment_type,
+      d.\`is available for free video consultation\`,
+      c.city_name,
+      country.country_name,
+      s.Specialization_name,
 
-    /* FEES */
-    COALESCE(MIN(hd.fees), 0) AS min_fees,
+      COALESCE(SUM(TIMESTAMPDIFF(YEAR, e.FromDate, e.TillDate)), 0) AS total_experience,
+      COALESCE(MIN(hd.fees), 0) AS min_fees,
 
-    /* RATINGS 
-    COALESCE(r.rate / NULLIF(r.rew, 0), 0) AS avg_rating, */
-    COALESCE(
-      MAX(r.rate) / NULLIF(MAX(r.rew), 0),
-      0
-    ) AS avg_rating,
+      COALESCE(
+        MAX(r.rate) / NULLIF(MAX(r.rew), 0),
+        0
+      ) AS avg_rating,
 
-    CASE 
-  WHEN 
-    EXISTS (
-      SELECT 1 
-      FROM doctorhd h 
-      WHERE h.dr = d.dr AND h.day = ?
-    )
-    OR
-    EXISTS (
-      SELECT 1 
-      FROM doctorvd v 
-      WHERE v.dr = d.dr AND v.day = ?
-    )
-    THEN 1 ELSE 0
-    END AS is_available_today,
+      CASE 
+        WHEN EXISTS (
+          SELECT 1 FROM doctorhd h
+          WHERE h.dr = d.dr AND h.day = ?
+        ) THEN 1 ELSE 0
+      END AS is_available_today,
 
-    GROUP_CONCAT(DISTINCT CONCAT(e.FromDate, ' - ', e.TillDate) SEPARATOR '; ') AS experiences,
-    GROUP_CONCAT(DISTINCT CONCAT(de.degree_name, ' (', i.university_name, ')') SEPARATOR '; ') AS qualifications
+      CASE
+        WHEN EXISTS (
+          SELECT 1 FROM doctorvd v
+          WHERE v.dr = d.dr AND v.day = ?
+        ) THEN 1 ELSE 0
+      END AS is_available_today_for_video,
 
-  FROM mdoctor d
-  JOIN specialization s ON s.Specialization_code = d.specialization_code
-  JOIN city c ON c.city_code = d.city_code
-  LEFT JOIN country ON country.country_code = c.country
-  LEFT JOIN doctorexp e ON e.dr = d.dr
-  LEFT JOIN doctorqd q ON q.dr = d.dr
-  LEFT JOIN institute i ON i.university = q.university
-  LEFT JOIN degree de ON de.degree_code = q.degree_code
-  LEFT JOIN doctorhd hd ON hd.dr = d.dr
-  LEFT JOIN (
-    SELECT dr, COUNT(review) AS rew, SUM(rating) AS rate
-    FROM doctorrd
-    GROUP BY dr
-  ) r ON r.dr = d.dr
+      GROUP_CONCAT(DISTINCT CONCAT(e.FromDate, ' - ', e.TillDate) SEPARATOR '; ') AS experiences,
+      GROUP_CONCAT(DISTINCT CONCAT(de.degree_name, ' (', i.university_name, ')') SEPARATOR '; ') AS qualifications
 
-  ${whereClause}
+    FROM mdoctor d
+    JOIN specialization s ON s.Specialization_code = d.specialization_code
+    JOIN city c ON c.city_code = d.city_code
+    LEFT JOIN country ON country.country_code = c.country
+    LEFT JOIN doctorexp e ON e.dr = d.dr
+    LEFT JOIN doctorqd q ON q.dr = d.dr
+    LEFT JOIN institute i ON i.university = q.university
+    LEFT JOIN degree de ON de.degree_code = q.degree_code
+    LEFT JOIN doctorhd hd ON hd.dr = d.dr
+    LEFT JOIN (
+      SELECT dr, COUNT(review) AS rew, SUM(rating) AS rate
+      FROM doctorrd
+      GROUP BY dr
+    ) r ON r.dr = d.dr
 
-  GROUP BY d.dr
-  ${orderByClause}
-`, isAvailableToday ? [today, today, today, today] : [today, today]);
+    ${whereClause}
+    GROUP BY d.dr
+    ${orderByClause}
+    `,
+      [...selectParams, ...params]
+    );
 
 
     console.log("rows", rows)
