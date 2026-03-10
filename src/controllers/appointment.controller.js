@@ -320,12 +320,15 @@ const closeAppointment = async (req, res) => {
     console.log("formattedDate", formattedDate);
 
 
-    const [appt] = await pool.query("SELECT * FROM appointments_statuses WHERE dr = ? AND date = ? AND status = 'closed'", [dr, formattedDate]);
+    const [appt] = await pool.query("SELECT * FROM appointments_statuses WHERE dr = ? AND date = ?", [dr, formattedDate]);
 
-    if (appt.length > 0) {
-      return res.status(400).json({
+    if (appt.length === 0) {
+
+      const [result] = await pool.query("INSERT INTO appointments_statuses (dr, date, status) VALUES (?, ?, ?)", [dr, formattedDate, status,]);
+
+      return res.status(404).json({
         success: false,
-        message: "Appointment already closed"
+        message: "Appointment closed successfully"
       });
     }
 
