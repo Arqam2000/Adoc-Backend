@@ -346,6 +346,38 @@ const closeAppointment = async (req, res) => {
   }
 }
 
+const openAppointment = async (req, res) => {
+  try {
+    const { dr, date, status } = req.body;
+
+    console.log(req.body)
+
+    const formattedDate = new Date(date).toLocaleString("en-CA", {
+      hour12: false,
+    }).replace(",", "");
+
+    console.log("formattedDate", formattedDate);
+
+
+    await pool.query("DELETE FROM appointments_statuses WHERE dr = ? AND date = ?", [dr, formattedDate]);
+
+    const [result] = await pool.query("INSERT INTO appointments_statuses (dr, date, status) VALUES (?, ?, ?)", [dr, formattedDate, status,]);
+
+    return res.status(200).json({
+      success: true,
+      message: "Appointment opened successfully"
+    });
+
+  }
+  catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Cannot open appointment",
+      error
+    });
+  }
+}
+
 const saveAppointmentStatus = async (req, res) => {
   try {
     const { dr, appointments } = req.body;
@@ -451,6 +483,7 @@ export {
   getAppointments,
   findAppointmentByDate,
   closeAppointment,
+  openAppointment,
   saveAppointmentStatus,
   getAppointmentsByPatient,
   editAppointment,
