@@ -329,7 +329,9 @@ const closeAppointment = async (req, res) => {
       });
     }
 
-    const [result] = await pool.query("INSERT INTO appointments_statuses (dr, date, status) VALUES (?, ?, ?)", [dr, formattedDate, status,]);
+     await pool.query("UPDATE appointments_statuses SET status = ? WHERE dr = ? AND date = ?", [status, dr, formattedDate]);
+
+    // const [result] = await pool.query("INSERT INTO appointments_statuses (dr, date, status) VALUES (?, ?, ?)", [dr, formattedDate, status,]);
 
     return res.status(200).json({
       success: true,
@@ -360,6 +362,7 @@ const openAppointment = async (req, res) => {
 
 
     await pool.query("DELETE FROM appointments_statuses WHERE dr = ? AND date = ?", [dr, formattedDate]);
+   
 
     const [result] = await pool.query("INSERT INTO appointments_statuses (dr, date, status) VALUES (?, ?, ?)", [dr, formattedDate, status,]);
 
